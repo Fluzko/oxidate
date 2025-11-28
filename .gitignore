@@ -1,0 +1,12 @@
+/target
+Cargo.lock
+
+# Environment variables (contains secrets)
+.env
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
