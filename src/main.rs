@@ -1,5 +1,6 @@
 mod auth;
 mod cli;
+mod calendar;
 
 use cli::Cli;
 use auth::Tokens;
