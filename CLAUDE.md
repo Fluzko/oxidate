@@ -133,3 +133,6 @@ Errors propagate up the call stack, accumulating context at each layer. Main.rs 
 - [ ] Descriptive names
 - commit tickets with the following format: [ticket-123] description
 - create branches with the following format when starting a ticket: ticket-123
+- when you finish a ticket you should ask to move it to "done" in jira
+- the project has the following columns at jira: "POR HACER", "EN CURSO", "EN REVISION", "FINALIZADO" only use one of those, don't ever try with a different one
+- when adding some code implementation run the test suite for that concrete use case before continuing with another step
