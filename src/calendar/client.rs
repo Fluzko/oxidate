@@ -53,12 +53,70 @@ impl CalendarClient {
     where
         F: Fn(String) -> Fut,
         Fut: std::future::Future<Output = Result<reqwest::Response>>,
+        T: serde::de::DeserializeOwned,
     {
-        todo!("Implement with_token_refresh")
+        // First attempt with current access token
+        let response = api_call(self.tokens.access_token.clone())
+            .await
+            .context("API call failed")?;
+
+        // Check if 401 BEFORE error_for_status() - Google may return Ok(Response) with 401 status
+        if response.status() == reqwest::StatusCode::UNAUTHORIZED {
+            // Refresh token
+            self.refresh_access_token()
+                .await
+                .context("Failed to refresh access token after 401")?;
+
+            // Retry with new token
+            let retry_response = api_call(self.tokens.access_token.clone())
+                .await
+                .context("API call failed on retry after token refresh")?;
+
+            // Check again - if still 401, something is wrong
+            if retry_response.status() == reqwest::StatusCode::UNAUTHORIZED {
+                anyhow::bail!("Still unauthorized after token refresh");
+            }
+
+            // Parse and return retry response
+            retry_response
+                .error_for_status()
+                .context("API returned error status on retry")?
+                .json::<T>()
+                .await
+                .context("Failed to parse response JSON on retry")
+        } else {
+            // Not 401, proceed normally
+            response
+                .error_for_status()
+                .context("API returned error status")?
+                .json::<T>()
+                .await
+                .context("Failed to parse response JSON")
+        }
     }
 
     async fn refresh_access_token(&mut self) -> Result<()> {
-        todo!("Implement refresh_access_token")
+        let refresh_token = RefreshToken::new(self.tokens.refresh_token.clone());
+
+        let token_result = self.oauth_client
+            .exchange_refresh_token(&refresh_token)
+            .request_async(async_http_client)
+            .await
+            .context("Failed to refresh access token")?;
+
+        // Update access token
+        self.tokens.access_token = token_result.access_token().secret().clone();
+
+        // Update refresh token if a new one is provided
+        if let Some(new_refresh_token) = token_result.refresh_token() {
+            self.tokens.refresh_token = new_refresh_token.secret().clone();
+        }
+
+        // Save tokens to disk
+        self.tokens.save()
+            .context("Failed to save refreshed tokens")?;
+
+        Ok(())
     }
 
     fn get_client_id() -> Result<String> {
