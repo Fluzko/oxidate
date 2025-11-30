@@ -37,7 +37,39 @@ impl CalendarClient {
     }
 
     pub async fn list_calendars(&mut self) -> Result<Vec<Calendar>> {
-        todo!("Implement list_calendars")
+        let mut all_calendars = Vec::new();
+        let mut page_token: Option<String> = None;
+
+        loop {
+            let http_client = self.http_client.clone();
+            let current_page_token = page_token.clone();
+
+            let response: CalendarListResponse = self
+                .with_token_refresh(|access_token| {
+                    let mut request = http_client
+                        .get("https://www.googleapis.com/calendar/v3/users/me/calendarList")
+                        .bearer_auth(access_token)
+                        .query(&[("maxResults", "250")]);
+
+                    if let Some(ref token) = current_page_token {
+                        request = request.query(&[("pageToken", token.as_str())]);
+                    }
+
+                    async move { request.send().await.context("Failed to send request") }
+                })
+                .await?;
+
+            all_calendars.extend(response.items);
+
+            // Check if there are more pages
+            if let Some(next_token) = response.next_page_token {
+                page_token = Some(next_token);
+            } else {
+                break;
+            }
+        }
+
+        Ok(all_calendars)
     }
 
     pub async fn list_events(
@@ -46,7 +78,56 @@ impl CalendarClient {
         time_min: DateTime<Utc>,
         time_max: DateTime<Utc>,
     ) -> Result<Vec<Event>> {
-        todo!("Implement list_events")
+        let mut all_events = Vec::new();
+        let mut page_token: Option<String> = None;
+
+        // Convert DateTime to RFC3339 format
+        let time_min_str = time_min.to_rfc3339();
+        let time_max_str = time_max.to_rfc3339();
+        let calendar_id_owned = calendar_id.to_string();
+
+        loop {
+            let http_client = self.http_client.clone();
+            let current_page_token = page_token.clone();
+            let cal_id = calendar_id_owned.clone();
+            let time_min_rfc = time_min_str.clone();
+            let time_max_rfc = time_max_str.clone();
+
+            let response: EventsListResponse = self
+                .with_token_refresh(|access_token| {
+                    let url = format!(
+                        "https://www.googleapis.com/calendar/v3/calendars/{}/events",
+                        cal_id
+                    );
+
+                    let mut request = http_client
+                        .get(&url)
+                        .bearer_auth(access_token)
+                        .query(&[
+                            ("maxResults", "2500"),
+                            ("timeMin", &time_min_rfc),
+                            ("timeMax", &time_max_rfc),
+                        ]);
+
+                    if let Some(ref token) = current_page_token {
+                        request = request.query(&[("pageToken", token.as_str())]);
+                    }
+
+                    async move { request.send().await.context("Failed to send request") }
+                })
+                .await?;
+
+            all_events.extend(response.items);
+
+            // Check if there are more pages
+            if let Some(next_token) = response.next_page_token {
+                page_token = Some(next_token);
+            } else {
+                break;
+            }
+        }
+
+        Ok(all_events)
     }
 
     async fn with_token_refresh<F, Fut, T>(&mut self, api_call: F) -> Result<T>
