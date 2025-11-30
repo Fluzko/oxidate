@@ -72,6 +72,45 @@ impl Tokens {
 
         Ok(())
     }
+
+    // Test-only methods that accept custom paths
+    #[cfg(test)]
+    fn save_to(&self, path: &std::path::Path) -> Result<()> {
+        // Create parent directory if it doesn't exist
+        if let Some(parent) = path.parent() {
+            fs::create_dir_all(parent)
+                .context("Failed to create config directory")?;
+        }
+
+        let json = serde_json::to_string_pretty(self)
+            .context("Failed to serialize tokens")?;
+
+        fs::write(path, json)
+            .context("Failed to write tokens file")?;
+
+        Ok(())
+    }
+
+    #[cfg(test)]
+    fn load_from(path: &std::path::Path) -> Result<Self> {
+        let json = fs::read_to_string(path)
+            .context("Failed to read tokens file")?;
+
+        let tokens: Self = serde_json::from_str(&json)
+            .context("Failed to deserialize tokens")?;
+
+        Ok(tokens)
+    }
+
+    #[cfg(test)]
+    fn delete_at(path: &std::path::Path) -> Result<()> {
+        if path.exists() {
+            fs::remove_file(path)
+                .context("Failed to delete tokens file")?;
+        }
+
+        Ok(())
+    }
 }
 
 #[cfg(test)]
@@ -90,6 +129,72 @@ mod tests {
     }
 
     #[test]
+    fn test_save_and_load_tokens() {
+        let temp_dir = tempfile::tempdir().expect("Failed to create temp dir");
+        let token_path = temp_dir.path().join("tokens.json");
+
+        let original_tokens = Tokens::new(
+            "test_access_token".to_string(),
+            "test_refresh_token".to_string()
+        );
+
+        // Save tokens
+        original_tokens.save_to(&token_path).expect("Failed to save tokens");
+
+        // Verify file exists
+        assert!(token_path.exists());
+
+        // Load tokens
+        let loaded_tokens = Tokens::load_from(&token_path).expect("Failed to load tokens");
+
+        // Verify they match
+        assert_eq!(original_tokens, loaded_tokens);
+
+        // temp_dir is automatically cleaned up when dropped
+    }
+
+    #[test]
+    fn test_delete_tokens() {
+        let temp_dir = tempfile::tempdir().expect("Failed to create temp dir");
+        let token_path = temp_dir.path().join("tokens.json");
+
+        // Create and save tokens
+        let tokens = Tokens::new(
+            "test_access".to_string(),
+            "test_refresh".to_string()
+        );
+
+        tokens.save_to(&token_path).expect("Failed to save tokens");
+        assert!(token_path.exists());
+
+        // Delete tokens
+        Tokens::delete_at(&token_path).expect("Failed to delete tokens");
+
+        // Verify they're gone
+        assert!(!token_path.exists());
+    }
+
+    #[test]
+    fn test_delete_tokens_when_file_does_not_exist() {
+        let temp_dir = tempfile::tempdir().expect("Failed to create temp dir");
+        let token_path = temp_dir.path().join("tokens.json");
+
+        // Should not error even if file doesn't exist
+        let result = Tokens::delete_at(&token_path);
+        assert!(result.is_ok());
+    }
+
+    #[test]
+    fn test_load_tokens_fails_when_file_does_not_exist() {
+        let temp_dir = tempfile::tempdir().expect("Failed to create temp dir");
+        let token_path = temp_dir.path().join("tokens.json");
+
+        let result = Tokens::load_from(&token_path);
+        assert!(result.is_err());
+    }
+
+    // Integration test using real storage path
+    #[test]
     fn test_tokens_exist_returns_false_when_file_does_not_exist() {
         // Clean up any existing tokens first
         Tokens::delete().ok();
@@ -99,16 +204,16 @@ mod tests {
     }
 
     #[test]
-    fn test_save_and_load_tokens() {
+    fn test_real_path_integration() {
         // Clean up first
         Tokens::delete().ok();
 
         let original_tokens = Tokens::new(
-            "test_access_token".to_string(),
-            "test_refresh_token".to_string()
+            "integration_access".to_string(),
+            "integration_refresh".to_string()
         );
 
-        // Save tokens
+        // Save using real path
         original_tokens.save().expect("Failed to save tokens");
 
         // Verify tokens exist
@@ -122,46 +227,5 @@ mod tests {
 
         // Cleanup
         Tokens::delete().ok();
-    }
-
-    #[test]
-    fn test_delete_tokens() {
-        // Clean up first
-        Tokens::delete().ok();
-
-        // Create tokens
-        let tokens = Tokens::new(
-            "test_access".to_string(),
-            "test_refresh".to_string()
-        );
-
-        // Save tokens
-        tokens.save().expect("Failed to save tokens");
-        assert!(Tokens::exists());
-
-        // Delete tokens
-        Tokens::delete().expect("Failed to delete tokens");
-
-        // Verify they're gone
-        assert!(!Tokens::exists());
-    }
-
-    #[test]
-    fn test_delete_tokens_when_file_does_not_exist() {
-        // Clean up first
-        Tokens::delete().ok();
-
-        // Should not error even if file doesn't exist
-        let result = Tokens::delete();
-        assert!(result.is_ok());
-    }
-
-    #[test]
-    fn test_load_tokens_fails_when_file_does_not_exist() {
-        // Clean up first
-        Tokens::delete().ok();
-
-        let result = Tokens::load();
-        assert!(result.is_err());
     }
 }
