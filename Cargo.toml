@@ -15,6 +15,10 @@ portpicker = "0.1"
 clap = { version = "4.4", features = ["derive"] }
 google-calendar3 = "5.0"
 anyhow = "1.0"
+chrono = { version = "0.4", features = ["serde"] }
+
+[dev-dependencies]
+tempfile = "3.8"
 
 [build-dependencies]
 dotenv = "0.15"

@@ -115,6 +115,59 @@ Errors propagate up the call stack, accumulating context at each layer. Main.rs 
 
 **Benefits:** No custom error types needed, context chains up, compiler enforces handling, works with any error type
 
+### Commit Strategy
+
+**When to Commit:**
+Commit after each **complete logical unit**. A logical unit is complete when:
+1. The feature/method/function is fully implemented
+2. All related tests pass
+3. The code compiles without errors
+
+**Examples of Logical Units:**
+- A constructor method (`new()`) with its tests
+- A single public method with its implementation and tests
+- A bug fix that makes previously failing tests pass
+- A refactoring that maintains all passing tests
+
+**Workflow - ALWAYS Follow This Sequence:**
+1. **Implement** the feature/method
+2. **Run tests** for that specific unit: `cargo test module::tests::test_name`
+3. **Verify** all tests pass
+4. **Commit** with descriptive message
+5. **Push** to remote
+6. **Move to next** logical unit
+
+**Commit Message Format:**
+```
+[TICKET-ID] Brief description of what was implemented
+
+Detailed explanation of changes:
+- What was added/changed
+- Why it was necessary
+- Any important implementation details
+```
+
+**Decision Criteria - When to Commit:**
+- ✅ **DO commit**: After implementing `CalendarClient::new()` and its tests pass
+- ✅ **DO commit**: After fixing a bug and the specific test now passes
+- ✅ **DO commit**: After implementing `list_calendars()` method completely
+- ❌ **DON'T commit**: After writing only the function signature with `todo!()`
+- ❌ **DON'T commit**: With failing tests
+- ❌ **DON'T commit**: Multiple unrelated changes together
+
+**Important Rules:**
+- NEVER commit without running tests first
+- NEVER commit failing tests
+- NEVER batch multiple logical units into one commit
+- ALWAYS push immediately after committing
+- ALWAYS run `cargo test` before commit, not just the specific test
+- NEVER add references to Claude Code, Anthropic, or AI tools in commit messages or PR descriptions
+
+**Branch Naming:**
+- Format: `TICKET-ID` (e.g., `MFLP-8`)
+- Create branch at start of ticket work
+- One branch per ticket
+
 ## Quick Reference for Adding Features
 
 **Steps:**
@@ -131,5 +184,25 @@ Errors propagate up the call stack, accumulating context at each layer. Main.rs 
 - [ ] Edge cases
 - [ ] Cleanup after tests
 - [ ] Descriptive names
-- commit tickets with the following format: [ticket-123] description
-- create branches with the following format when starting a ticket: ticket-123
+
+## Jira Workflow
+
+**Status Columns:**
+The project uses these exact column names in Jira:
+- `POR HACER` - To Do
+- `EN CURSO` - In Progress
+- `EN REVISIÓN` - In Review
+- `FINALIZADO` - Done
+
+**Important:** Use ONLY these exact column names. Never attempt to use different names.
+
+**Workflow:**
+1. Start ticket → Move to `EN CURSO`
+2. Create branch: `TICKET-ID` format
+3. Implement feature following TDD + Commit Strategy
+4. Create PR → Move ticket to `EN REVISIÓN`
+5. After PR merge → Move ticket to `FINALIZADO`
+
+**When to Move Tickets:**
+- Always ask before moving a ticket to `FINALIZADO`
+- Automatically move to `EN REVISIÓN` when PR is created
