@@ -139,6 +139,8 @@ fn render_status_bar(f: &mut ratatui::Frame, app_state: &AppState) {
             Span::raw("Keys: "),
             Span::styled("←→↑↓", Style::default().add_modifier(Modifier::BOLD)),
             Span::raw(" Navigate | "),
+            Span::styled("t", Style::default().add_modifier(Modifier::BOLD)),
+            Span::raw(" Today | "),
             Span::styled("Tab", Style::default().add_modifier(Modifier::BOLD)),
             Span::raw(" Switch View | "),
             Span::styled("r", Style::default().add_modifier(Modifier::BOLD)),
