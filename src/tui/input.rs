@@ -12,6 +12,10 @@ pub fn handle_key_event(key: KeyEvent, state: &mut AppState) -> InputAction {
     match key.code {
         KeyCode::Char('q') | KeyCode::Esc => InputAction::Quit,
         KeyCode::Char('r') => InputAction::Refresh,
+        KeyCode::Char('t') => {
+            state.jump_to_today();
+            InputAction::None
+        }
         KeyCode::Tab => {
             state.toggle_focus();
             InputAction::None
@@ -121,5 +125,28 @@ mod tests {
 
         handle_key_event(create_key_event(KeyCode::Tab), &mut state);
         assert_eq!(state.view_focus, ViewFocus::Calendar);
+    }
+
+    #[test]
+    fn test_t_key_jumps_to_today() {
+        let mut state = AppState::new();
+        let away_date = NaiveDate::from_ymd_opt(2025, 12, 25).unwrap();
+        state.selected_date = away_date;
+        assert_ne!(state.selected_date, state.today);
+
+        let action = handle_key_event(create_key_event(KeyCode::Char('t')), &mut state);
+
+        assert!(matches!(action, InputAction::None));
+        assert_eq!(state.selected_date, state.today);
+    }
+
+    #[test]
+    fn test_t_key_when_already_on_today() {
+        let mut state = AppState::new();
+        assert_eq!(state.selected_date, state.today);
+
+        handle_key_event(create_key_event(KeyCode::Char('t')), &mut state);
+
+        assert_eq!(state.selected_date, state.today);
     }
 }
