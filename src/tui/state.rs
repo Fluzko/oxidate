@@ -9,6 +9,12 @@ pub enum ViewFocus {
     Events,
 }
 
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum EventsViewMode {
+    List,
+    Details { event_index: usize },
+}
+
 #[derive(Debug)]
 pub struct AppState {
     pub selected_date: NaiveDate,
@@ -18,6 +24,8 @@ pub struct AppState {
     pub loading: bool,
     pub error: Option<String>,
     pub view_focus: ViewFocus,
+    pub selected_event_index: Option<usize>,
+    pub events_view_mode: EventsViewMode,
 }
 
 impl AppState {
@@ -31,6 +39,8 @@ impl AppState {
             loading: true,
             error: None,
             view_focus: ViewFocus::Calendar,
+            selected_event_index: None,
+            events_view_mode: EventsViewMode::List,
         }
     }
 
@@ -294,5 +304,12 @@ mod tests {
         state.move_to_next_week();
 
         assert_eq!(state.today, original_today);
+    }
+
+    #[test]
+    fn test_event_selection_initialization() {
+        let state = AppState::new();
+        assert_eq!(state.selected_event_index, None);
+        assert!(matches!(state.events_view_mode, EventsViewMode::List));
     }
 }
