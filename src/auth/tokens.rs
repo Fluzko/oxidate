@@ -21,8 +21,8 @@ impl Tokens {
         let config_dir = dirs::config_dir()
             .context("Failed to get config directory")?;
 
-        let app_config_dir = config_dir.join("ai-rust-calendar");
-        Ok(app_config_dir.join("tokens.json"))
+        let app_config_dir = config_dir.join("calendar-tui");
+        Ok(app_config_dir.join("token.json"))
     }
 
     pub fn exists() -> bool {
