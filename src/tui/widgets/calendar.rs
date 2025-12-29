@@ -113,12 +113,22 @@ impl<'a> Widget for CalendarWidget<'a> {
 
                 // Determine style
                 let mut style = Style::default();
+                let is_today = date == self.state.today;
+                let is_selected = date == selected_date;
 
-                // Highlight selected date
-                if date == selected_date {
+                // Priority 1: Both today AND selected
+                if is_today && is_selected {
+                    style = style.bg(Color::Cyan).fg(Color::White).add_modifier(Modifier::BOLD);
+                }
+                // Priority 2: Selected but not today
+                else if is_selected {
                     style = style.bg(Color::Blue).fg(Color::White).add_modifier(Modifier::BOLD);
                 }
-                // Mark dates with events
+                // Priority 3: Today but not selected
+                else if is_today {
+                    style = style.fg(Color::Green).add_modifier(Modifier::BOLD);
+                }
+                // Priority 4: Has events
                 else if self.state.has_events(date) {
                     style = style.fg(Color::Yellow).add_modifier(Modifier::BOLD);
                 }
@@ -200,5 +210,16 @@ mod tests {
         let state = AppState::new();
         let widget = CalendarWidget::new(&state);
         assert_eq!(widget.state.selected_date, Local::now().date_naive());
+    }
+
+    #[test]
+    fn test_calendar_widget_uses_today_from_state() {
+        let mut state = AppState::new();
+        state.today = NaiveDate::from_ymd_opt(2025, 6, 15).unwrap();
+        state.selected_date = NaiveDate::from_ymd_opt(2025, 6, 1).unwrap();
+
+        let widget = CalendarWidget::new(&state);
+
+        assert_eq!(widget.state.today, NaiveDate::from_ymd_opt(2025, 6, 15).unwrap());
     }
 }
