@@ -12,6 +12,7 @@ pub enum ViewFocus {
 #[derive(Debug)]
 pub struct AppState {
     pub selected_date: NaiveDate,
+    pub today: NaiveDate,
     pub calendars: Vec<Calendar>,
     pub events: HashMap<NaiveDate, Vec<Event>>,
     pub loading: bool,
@@ -21,8 +22,10 @@ pub struct AppState {
 
 impl AppState {
     pub fn new() -> Self {
+        let today = Local::now().date_naive();
         Self {
-            selected_date: Local::now().date_naive(),
+            selected_date: today,
+            today,
             calendars: Vec::new(),
             events: HashMap::new(),
             loading: true,
@@ -58,6 +61,10 @@ impl AppState {
             ViewFocus::Calendar => ViewFocus::Events,
             ViewFocus::Events => ViewFocus::Calendar,
         };
+    }
+
+    pub fn jump_to_today(&mut self) {
+        self.selected_date = self.today;
     }
 }
 
@@ -258,5 +265,34 @@ mod tests {
         };
         state.events.insert(date, vec![event]);
         assert!(state.has_events(date));
+    }
+
+    #[test]
+    fn test_app_state_today_initialized() {
+        let state = AppState::new();
+        let expected_today = Local::now().date_naive();
+        assert_eq!(state.today, expected_today);
+        assert_eq!(state.selected_date, state.today);
+    }
+
+    #[test]
+    fn test_jump_to_today() {
+        let mut state = AppState::new();
+        state.selected_date = NaiveDate::from_ymd_opt(2025, 1, 1).unwrap();
+        assert_ne!(state.selected_date, state.today);
+
+        state.jump_to_today();
+        assert_eq!(state.selected_date, state.today);
+    }
+
+    #[test]
+    fn test_today_remains_constant_after_navigation() {
+        let mut state = AppState::new();
+        let original_today = state.today;
+
+        state.move_selected_date(5);
+        state.move_to_next_week();
+
+        assert_eq!(state.today, original_today);
     }
 }
