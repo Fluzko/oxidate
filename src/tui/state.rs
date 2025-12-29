@@ -105,6 +105,21 @@ impl AppState {
             Some(idx) => idx - 1,
         });
     }
+
+    pub fn select_event(&mut self) {
+        if let Some(index) = self.selected_event_index {
+            self.events_view_mode = EventsViewMode::Details { event_index: index };
+        }
+    }
+
+    pub fn exit_event_details(&mut self) {
+        self.events_view_mode = EventsViewMode::List;
+    }
+
+    pub fn reset_event_selection(&mut self) {
+        self.selected_event_index = None;
+        self.events_view_mode = EventsViewMode::List;
+    }
 }
 
 #[derive(Debug, Clone)]
@@ -484,5 +499,53 @@ mod tests {
 
         state.move_event_selection_up();
         assert_eq!(state.selected_event_index, None);
+    }
+
+    #[test]
+    fn test_select_event() {
+        let mut state = AppState::new();
+        state.selected_event_index = Some(2);
+
+        assert!(matches!(state.events_view_mode, EventsViewMode::List));
+
+        state.select_event();
+
+        assert!(matches!(
+            state.events_view_mode,
+            EventsViewMode::Details { event_index: 2 }
+        ));
+    }
+
+    #[test]
+    fn test_select_event_with_no_selection() {
+        let mut state = AppState::new();
+        assert_eq!(state.selected_event_index, None);
+
+        state.select_event();
+
+        // Should still be in List mode since no event is selected
+        assert!(matches!(state.events_view_mode, EventsViewMode::List));
+    }
+
+    #[test]
+    fn test_exit_event_details() {
+        let mut state = AppState::new();
+        state.events_view_mode = EventsViewMode::Details { event_index: 1 };
+
+        state.exit_event_details();
+
+        assert!(matches!(state.events_view_mode, EventsViewMode::List));
+    }
+
+    #[test]
+    fn test_reset_event_selection() {
+        let mut state = AppState::new();
+        state.selected_event_index = Some(3);
+        state.events_view_mode = EventsViewMode::Details { event_index: 3 };
+
+        state.reset_event_selection();
+
+        assert_eq!(state.selected_event_index, None);
+        assert!(matches!(state.events_view_mode, EventsViewMode::List));
     }
 }
