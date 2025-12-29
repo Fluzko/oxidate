@@ -368,4 +368,58 @@ mod tests {
         let action = handle_key_event(create_key_event(KeyCode::Char('q')), &mut state);
         assert!(matches!(action, InputAction::Quit));
     }
+
+    #[test]
+    fn test_date_change_resets_selection() {
+        use crate::calendar::models::{Event, EventDateTime};
+
+        let mut state = AppState::new();
+        let date = NaiveDate::from_ymd_opt(2025, 6, 15).unwrap();
+        state.selected_date = date;
+        state.view_focus = ViewFocus::Calendar;
+
+        // Add an event and select it
+        let events = vec![
+            Event {
+                id: "1".to_string(),
+                summary: Some("Event 1".to_string()),
+                description: None,
+                location: None,
+                start: EventDateTime {
+                    date_time: Some("2025-06-15T10:00:00Z".to_string()),
+                    date: None,
+                    time_zone: None,
+                },
+                end: EventDateTime {
+                    date_time: Some("2025-06-15T11:00:00Z".to_string()),
+                    date: None,
+                    time_zone: None,
+                },
+                status: None,
+                html_link: None,
+                attendees: None,
+            },
+        ];
+        state.events.insert(date, events);
+        state.selected_event_index = Some(0);
+        state.events_view_mode = EventsViewMode::Details { event_index: 0 };
+
+        // Change date with arrow key
+        handle_key_event(create_key_event(KeyCode::Right), &mut state);
+
+        // Selection should be reset
+        assert_eq!(state.selected_event_index, None);
+        assert!(matches!(state.events_view_mode, EventsViewMode::List));
+    }
+
+    #[test]
+    fn test_esc_quits_from_list_mode() {
+        let mut state = AppState::new();
+        state.view_focus = ViewFocus::Events;
+        state.events_view_mode = EventsViewMode::List;
+
+        let action = handle_key_event(create_key_event(KeyCode::Esc), &mut state);
+
+        assert!(matches!(action, InputAction::Quit));
+    }
 }
