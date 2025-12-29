@@ -84,27 +84,51 @@ impl<'a> Widget for EventListWidget<'a> {
         let mut lines = Vec::new();
 
         for (i, event) in events.iter().enumerate() {
-            // Time
+            let is_selected = self.state.selected_event_index == Some(i)
+                             && self.state.view_focus == ViewFocus::Events;
+
+            // Selection indicator and time
             let time_str = Self::format_event_time(event);
+            let indicator = if is_selected { "> " } else { "  " };
+
             let time_span = Span::styled(
-                time_str,
-                Style::default().fg(Color::Green).add_modifier(Modifier::BOLD),
+                format!("{}{}", indicator, time_str),
+                if is_selected {
+                    Style::default()
+                        .fg(Color::Green)
+                        .bg(Color::DarkGray)
+                        .add_modifier(Modifier::BOLD)
+                } else {
+                    Style::default()
+                        .fg(Color::Green)
+                        .add_modifier(Modifier::BOLD)
+                },
             );
 
             // Summary
             let summary = event.summary.as_deref().unwrap_or("(No title)");
             let summary_span = Span::styled(
                 format!(" {}", summary),
-                Style::default(),
+                if is_selected {
+                    Style::default().bg(Color::DarkGray)
+                } else {
+                    Style::default()
+                },
             );
 
             lines.push(Line::from(vec![time_span, summary_span]));
 
             // Location (if available)
             if let Some(ref location) = event.location {
+                let location_style = if is_selected {
+                    Style::default().fg(Color::Yellow).bg(Color::DarkGray)
+                } else {
+                    Style::default().fg(Color::Yellow)
+                };
+
                 lines.push(Line::from(Span::styled(
-                    format!("  \u{1f4cd} {}", location),
-                    Style::default().fg(Color::Yellow),
+                    format!("    \u{1f4cd} {}", location),
+                    location_style,
                 )));
             }
 
@@ -112,6 +136,15 @@ impl<'a> Widget for EventListWidget<'a> {
             if i < events.len() - 1 {
                 lines.push(Line::from(""));
             }
+        }
+
+        // Add help hint when focused
+        if self.state.view_focus == ViewFocus::Events {
+            lines.push(Line::from(""));
+            lines.push(Line::from(Span::styled(
+                "(\u{2191}\u{2193} to select, Enter for details)",
+                Style::default().fg(Color::DarkGray).add_modifier(Modifier::ITALIC),
+            )));
         }
 
         let paragraph = Paragraph::new(lines)
@@ -185,5 +218,24 @@ mod tests {
         let state = AppState::new();
         let widget = EventListWidget::new(&state);
         assert_eq!(widget.state.selected_date, Local::now().date_naive());
+    }
+
+    #[test]
+    fn test_widget_reads_selected_index_from_state() {
+        let mut state = AppState::new();
+        state.selected_event_index = Some(2);
+
+        let widget = EventListWidget::new(&state);
+
+        assert_eq!(widget.state.selected_event_index, Some(2));
+    }
+
+    #[test]
+    fn test_no_selection_when_no_events() {
+        let state = AppState::new();
+
+        let widget = EventListWidget::new(&state);
+
+        assert_eq!(widget.state.selected_event_index, None);
     }
 }
