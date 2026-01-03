@@ -37,6 +37,7 @@ pub fn run_tui(client: CalendarClient) -> Result<()> {
 
     // Start data loader
     let date_range = DateRange::five_month_span(Local::now().date_naive());
+    app_state.current_date_range = date_range.clone();
     let mut data_loader = Some(DataLoader::new(client, date_range));
 
     // Main event loop
@@ -55,6 +56,8 @@ fn run_app(
     app_state: &mut AppState,
     data_loader: &mut Option<DataLoader>,
 ) -> Result<()> {
+    let mut available_client: Option<CalendarClient> = None;
+
     loop {
         // Check for data updates from loader
         if let Some(loader) = data_loader {
@@ -70,19 +73,22 @@ fn run_app(
                         client,
                     } => {
                         app_state.calendars = calendars;
-                        app_state.events = events;
+                        // Merge new events into existing cache
+                        app_state.events.extend(events);
+                        // Trim to 25-month span to prevent unlimited growth
+                        app_state.trim_events_to_25_month_span();
                         app_state.loading = false;
                         app_state.error = None;
+                        // Store client for reuse in future refreshes
+                        available_client = Some(client);
                         *data_loader = None; // Drop loader after success
-                        // TODO: Store client for reuse (Step 3)
-                        drop(client); // Temporary: drop client until Step 3
                     }
                     DataMessage::Error { error, client } => {
                         app_state.loading = false;
                         app_state.error = Some(error);
+                        // Store client even on error to allow retry
+                        available_client = Some(client);
                         *data_loader = None; // Drop loader after error
-                        // TODO: Store client for reuse (Step 3)
-                        drop(client); // Temporary: drop client until Step 3
                     }
                 }
             }
