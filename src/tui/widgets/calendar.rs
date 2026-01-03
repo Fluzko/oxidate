@@ -118,11 +118,17 @@ impl<'a> Widget for CalendarWidget<'a> {
 
                 // Priority 1: Both today AND selected
                 if is_today && is_selected {
-                    style = style.bg(Color::Cyan).fg(Color::White).add_modifier(Modifier::BOLD);
+                    style = style
+                        .bg(Color::Cyan)
+                        .fg(Color::White)
+                        .add_modifier(Modifier::BOLD);
                 }
                 // Priority 2: Selected but not today
                 else if is_selected {
-                    style = style.bg(Color::Blue).fg(Color::White).add_modifier(Modifier::BOLD);
+                    style = style
+                        .bg(Color::Blue)
+                        .fg(Color::White)
+                        .add_modifier(Modifier::BOLD);
                 }
                 // Priority 3: Today but not selected
                 else if is_today {
@@ -133,9 +139,16 @@ impl<'a> Widget for CalendarWidget<'a> {
                     style = style.fg(Color::Yellow).add_modifier(Modifier::BOLD);
                 }
 
-                let day_str = format!("{:3}", day);
-                let span = Span::styled(day_str, style);
-                buf.set_span(x_pos, y_pos, &span, 3);
+                let is_single_digit = day < 10;
+                if is_single_digit {
+                    let day_str = format!("{:^3}", day);
+                    let span = Span::styled(day_str, style);
+                    buf.set_span(x_pos, y_pos, &span, 3);
+                } else {
+                    let day_str = format!("{:^4}", day);
+                    let span = Span::styled(day_str, style);
+                    buf.set_span(x_pos, y_pos, &span, 4);
+                };
 
                 day += 1;
             }

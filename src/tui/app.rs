@@ -20,8 +20,8 @@ use crate::calendar::client::CalendarClient;
 use super::{
     input::{handle_key_event, InputAction},
     loader::{DataLoader, DataMessage},
-    state::{AppState, DateRange},
-    widgets::{CalendarWidget, EventListWidget},
+    state::{AppState, DateRange, EventsViewMode, ViewFocus},
+    widgets::{CalendarWidget, EventDetailsWidget, EventListWidget},
 };
 
 pub fn run_tui(client: CalendarClient) -> Result<()> {
@@ -91,9 +91,17 @@ fn run_app(
             let calendar_widget = CalendarWidget::new(app_state);
             f.render_widget(calendar_widget, chunks[0]);
 
-            // Render events widget
-            let events_widget = EventListWidget::new(app_state);
-            f.render_widget(events_widget, chunks[1]);
+            // Render events widget based on mode
+            match app_state.events_view_mode {
+                EventsViewMode::List => {
+                    let events_widget = EventListWidget::new(app_state);
+                    f.render_widget(events_widget, chunks[1]);
+                }
+                EventsViewMode::Details { event_index } => {
+                    let details_widget = EventDetailsWidget::new(app_state, event_index);
+                    f.render_widget(details_widget, chunks[1]);
+                }
+            }
 
             // Render status bar at the bottom
             render_status_bar(f, app_state);
@@ -135,19 +143,50 @@ fn render_status_bar(f: &mut ratatui::Frame, app_state: &AppState) {
             Style::default().fg(Color::Red).add_modifier(Modifier::BOLD),
         ))]
     } else {
-        vec![Line::from(vec![
-            Span::raw("Keys: "),
-            Span::styled("←→↑↓", Style::default().add_modifier(Modifier::BOLD)),
-            Span::raw(" Navigate | "),
-            Span::styled("t", Style::default().add_modifier(Modifier::BOLD)),
-            Span::raw(" Today | "),
-            Span::styled("Tab", Style::default().add_modifier(Modifier::BOLD)),
-            Span::raw(" Switch View | "),
-            Span::styled("r", Style::default().add_modifier(Modifier::BOLD)),
-            Span::raw(" Refresh | "),
-            Span::styled("q", Style::default().add_modifier(Modifier::BOLD)),
-            Span::raw(" Quit"),
-        ])]
+        // Show different hints based on focus and mode
+        match (app_state.view_focus, app_state.events_view_mode) {
+            (ViewFocus::Calendar, _) => {
+                vec![Line::from(vec![
+                    Span::raw("Keys: "),
+                    Span::styled("←→↑↓", Style::default().add_modifier(Modifier::BOLD)),
+                    Span::raw(" Navigate | "),
+                    Span::styled("t", Style::default().add_modifier(Modifier::BOLD)),
+                    Span::raw(" Today | "),
+                    Span::styled("Tab", Style::default().add_modifier(Modifier::BOLD)),
+                    Span::raw(" Switch View | "),
+                    Span::styled("r", Style::default().add_modifier(Modifier::BOLD)),
+                    Span::raw(" Refresh | "),
+                    Span::styled("q", Style::default().add_modifier(Modifier::BOLD)),
+                    Span::raw(" Quit"),
+                ])]
+            }
+            (ViewFocus::Events, EventsViewMode::List) => {
+                vec![Line::from(vec![
+                    Span::raw("Keys: "),
+                    Span::styled("\u{2191}\u{2193}", Style::default().add_modifier(Modifier::BOLD)),
+                    Span::raw(" Select | "),
+                    Span::styled("Enter", Style::default().add_modifier(Modifier::BOLD)),
+                    Span::raw(" Details | "),
+                    Span::styled("Tab", Style::default().add_modifier(Modifier::BOLD)),
+                    Span::raw(" Switch View | "),
+                    Span::styled("t", Style::default().add_modifier(Modifier::BOLD)),
+                    Span::raw(" Today | "),
+                    Span::styled("q", Style::default().add_modifier(Modifier::BOLD)),
+                    Span::raw(" Quit"),
+                ])]
+            }
+            (ViewFocus::Events, EventsViewMode::Details { .. }) => {
+                vec![Line::from(vec![
+                    Span::raw("Keys: "),
+                    Span::styled("Esc", Style::default().add_modifier(Modifier::BOLD)),
+                    Span::raw(" Back to List | "),
+                    Span::styled("Tab", Style::default().add_modifier(Modifier::BOLD)),
+                    Span::raw(" Switch View | "),
+                    Span::styled("q", Style::default().add_modifier(Modifier::BOLD)),
+                    Span::raw(" Quit"),
+                ])]
+            }
+        }
     };
 
     let status_block = Block::default()
