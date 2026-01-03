@@ -26,11 +26,15 @@ pub struct AppState {
     pub view_focus: ViewFocus,
     pub selected_event_index: Option<usize>,
     pub events_view_mode: EventsViewMode,
+    pub current_date_range: DateRange,
+    pub current_month: (i32, u32),
 }
 
 impl AppState {
     pub fn new() -> Self {
         let today = Local::now().date_naive();
+        let current_date_range = DateRange::five_month_span(today);
+        let current_month = (today.year(), today.month());
         Self {
             selected_date: today,
             today,
@@ -41,6 +45,8 @@ impl AppState {
             view_focus: ViewFocus::Calendar,
             selected_event_index: None,
             events_view_mode: EventsViewMode::List,
+            current_date_range,
+            current_month,
         }
     }
 
@@ -129,6 +135,51 @@ impl AppState {
         self.selected_event_index = None;
         self.events_view_mode = EventsViewMode::List;
     }
+
+    pub fn needs_date_range_refresh(&self) -> bool {
+        let selected_month = (self.selected_date.year(), self.selected_date.month());
+        let start_month = (
+            self.current_date_range.start.year(),
+            self.current_date_range.start.month(),
+        );
+        let end_month = (
+            self.current_date_range.end.year(),
+            self.current_date_range.end.month(),
+        );
+
+        // Refresh if we're at the first or last month of the range
+        selected_month == start_month || selected_month == end_month
+    }
+
+    pub fn update_date_range(&mut self, new_range: DateRange) {
+        self.current_date_range = new_range;
+    }
+
+    pub fn trim_events_to_25_month_span(&mut self) {
+        let cache_range = DateRange::twenty_five_month_span(self.selected_date);
+
+        // Collect dates to remove (those outside the 25-month span)
+        let dates_to_remove: Vec<NaiveDate> = self
+            .events
+            .keys()
+            .filter(|&&date| {
+                // Always preserve current month
+                let date_month = (date.year(), date.month());
+                if date_month == self.current_month {
+                    return false;
+                }
+
+                // Remove if outside the cache range
+                date < cache_range.start || date > cache_range.end
+            })
+            .copied()
+            .collect();
+
+        // Remove the dates
+        for date in dates_to_remove {
+            self.events.remove(&date);
+        }
+    }
 }
 
 #[derive(Debug, Clone)]
@@ -160,6 +211,47 @@ impl DateRange {
             let month = center_date.month() + 2;
             Self::last_day_of_month(center_date.year(), month)
         };
+
+        Self { start, end }
+    }
+
+    pub fn twenty_five_month_span(center_date: NaiveDate) -> Self {
+        // Calculate start: 12 months before center date
+        let start_year;
+        let start_month;
+
+        if center_date.month() <= 12 {
+            let months_back = 12;
+            if center_date.month() as i32 - months_back <= 0 {
+                // Need to go to previous year
+                start_year = center_date.year() - 1;
+                start_month = (12 + center_date.month() as i32 - months_back) as u32;
+            } else {
+                start_year = center_date.year();
+                start_month = center_date.month() - months_back as u32;
+            }
+        } else {
+            start_year = center_date.year();
+            start_month = center_date.month();
+        }
+
+        let start = NaiveDate::from_ymd_opt(start_year, start_month, 1).unwrap();
+
+        // Calculate end: 12 months after center date, last day of that month
+        let end_year;
+        let end_month;
+
+        let months_ahead = 12;
+        if center_date.month() + months_ahead > 12 {
+            // Need to go to next year
+            end_year = center_date.year() + 1;
+            end_month = center_date.month() + months_ahead - 12;
+        } else {
+            end_year = center_date.year();
+            end_month = center_date.month() + months_ahead;
+        }
+
+        let end = Self::last_day_of_month(end_year, end_month);
 
         Self { start, end }
     }
@@ -568,5 +660,200 @@ mod tests {
 
         assert_eq!(state.selected_event_index, None);
         assert!(matches!(state.events_view_mode, EventsViewMode::List));
+    }
+
+    #[test]
+    fn test_twenty_five_month_span_calculation() {
+        let center = NaiveDate::from_ymd_opt(2025, 6, 15).unwrap();
+        let range = DateRange::twenty_five_month_span(center);
+
+        // 12 months before June 2025 = June 2024
+        assert_eq!(range.start, NaiveDate::from_ymd_opt(2024, 6, 1).unwrap());
+
+        // 12 months after June 2025 = June 2026, last day (30th)
+        assert_eq!(range.end, NaiveDate::from_ymd_opt(2026, 6, 30).unwrap());
+    }
+
+    #[test]
+    fn test_twenty_five_month_span_year_boundary() {
+        let center = NaiveDate::from_ymd_opt(2025, 1, 15).unwrap();
+        let range = DateRange::twenty_five_month_span(center);
+
+        // 12 months before January 2025 = January 2024
+        assert_eq!(range.start, NaiveDate::from_ymd_opt(2024, 1, 1).unwrap());
+
+        // 12 months after January 2025 = January 2026
+        assert_eq!(range.end, NaiveDate::from_ymd_opt(2026, 1, 31).unwrap());
+    }
+
+    #[test]
+    fn test_needs_refresh_at_start_boundary() {
+        let mut state = AppState::new();
+        let center = NaiveDate::from_ymd_opt(2025, 6, 15).unwrap();
+        state.current_date_range = DateRange::five_month_span(center);
+
+        // Navigate to first month (April) of 5-month span (Apr-Aug)
+        state.selected_date = NaiveDate::from_ymd_opt(2025, 4, 15).unwrap();
+
+        assert!(state.needs_date_range_refresh());
+    }
+
+    #[test]
+    fn test_needs_refresh_at_end_boundary() {
+        let mut state = AppState::new();
+        let center = NaiveDate::from_ymd_opt(2025, 6, 15).unwrap();
+        state.current_date_range = DateRange::five_month_span(center);
+
+        // Navigate to last month (August) of 5-month span (Apr-Aug)
+        state.selected_date = NaiveDate::from_ymd_opt(2025, 8, 15).unwrap();
+
+        assert!(state.needs_date_range_refresh());
+    }
+
+    #[test]
+    fn test_no_refresh_in_middle_months() {
+        let mut state = AppState::new();
+        let center = NaiveDate::from_ymd_opt(2025, 6, 15).unwrap();
+        state.current_date_range = DateRange::five_month_span(center);
+
+        // Stay in middle month (May, June, July)
+        state.selected_date = NaiveDate::from_ymd_opt(2025, 5, 15).unwrap();
+        assert!(!state.needs_date_range_refresh());
+
+        state.selected_date = NaiveDate::from_ymd_opt(2025, 6, 20).unwrap();
+        assert!(!state.needs_date_range_refresh());
+
+        state.selected_date = NaiveDate::from_ymd_opt(2025, 7, 10).unwrap();
+        assert!(!state.needs_date_range_refresh());
+    }
+
+    #[test]
+    fn test_update_date_range_changes_current_range() {
+        let mut state = AppState::new();
+        let old_center = NaiveDate::from_ymd_opt(2025, 6, 15).unwrap();
+        state.current_date_range = DateRange::five_month_span(old_center);
+
+        let new_center = NaiveDate::from_ymd_opt(2025, 9, 15).unwrap();
+        let new_range = DateRange::five_month_span(new_center);
+
+        state.update_date_range(new_range.clone());
+
+        assert_eq!(state.current_date_range.start, new_range.start);
+        assert_eq!(state.current_date_range.end, new_range.end);
+    }
+
+    #[test]
+    fn test_trim_events_to_25_month_span() {
+        let mut state = AppState::new();
+        let selected = NaiveDate::from_ymd_opt(2025, 6, 15).unwrap();
+        state.selected_date = selected;
+        state.current_month = (2025, 6);
+
+        // Add events spanning 30 months (too many)
+        use crate::calendar::models::{Event, EventDateTime};
+        for month_offset in -15i32..=14 {
+            let date = selected
+                .checked_add_signed(chrono::Duration::days(month_offset as i64 * 30))
+                .unwrap();
+            let event = Event {
+                id: format!("event_{}", month_offset),
+                summary: Some("Test".to_string()),
+                description: None,
+                location: None,
+                start: EventDateTime {
+                    date_time: Some("2025-06-15T10:00:00Z".to_string()),
+                    date: None,
+                    time_zone: None,
+                },
+                end: EventDateTime {
+                    date_time: Some("2025-06-15T11:00:00Z".to_string()),
+                    date: None,
+                    time_zone: None,
+                },
+                status: None,
+                html_link: None,
+                attendees: None,
+            };
+            state.events.insert(date, vec![event]);
+        }
+
+        let initial_count = state.events.len();
+        assert!(initial_count > 25); // We added 30 months worth
+
+        state.trim_events_to_25_month_span();
+
+        // Should be trimmed to approximately 25 months (may vary slightly due to month lengths)
+        assert!(state.events.len() <= 26); // Allow small variance
+        assert!(state.events.len() >= 24);
+    }
+
+    #[test]
+    fn test_trim_preserves_current_month() {
+        let mut state = AppState::new();
+        // Set selected date far from current month
+        state.selected_date = NaiveDate::from_ymd_opt(2024, 1, 15).unwrap();
+        state.current_month = (2025, 6); // Current month is June 2025
+
+        // Add events for current month (June 2025) - should be preserved
+        use crate::calendar::models::{Event, EventDateTime};
+        let current_month_date = NaiveDate::from_ymd_opt(2025, 6, 15).unwrap();
+        let event = Event {
+            id: "current_month_event".to_string(),
+            summary: Some("Current Month".to_string()),
+            description: None,
+            location: None,
+            start: EventDateTime {
+                date_time: Some("2025-06-15T10:00:00Z".to_string()),
+                date: None,
+                time_zone: None,
+            },
+            end: EventDateTime {
+                date_time: Some("2025-06-15T11:00:00Z".to_string()),
+                date: None,
+                time_zone: None,
+            },
+            status: None,
+            html_link: None,
+            attendees: None,
+        };
+        state.events.insert(current_month_date, vec![event]);
+
+        // Add events centered on selected date (Jan 2024) - 25 months worth
+        for month_offset in -12i32..=12 {
+            let date = state.selected_date
+                .checked_add_signed(chrono::Duration::days(month_offset as i64 * 30))
+                .unwrap();
+            if date.month() != current_month_date.month() || date.year() != current_month_date.year() {
+                let event = Event {
+                    id: format!("event_{}", month_offset),
+                    summary: Some("Test".to_string()),
+                    description: None,
+                    location: None,
+                    start: EventDateTime {
+                        date_time: Some("2024-01-15T10:00:00Z".to_string()),
+                        date: None,
+                        time_zone: None,
+                    },
+                    end: EventDateTime {
+                        date_time: Some("2024-01-15T11:00:00Z".to_string()),
+                        date: None,
+                        time_zone: None,
+                    },
+                    status: None,
+                    html_link: None,
+                    attendees: None,
+                };
+                state.events.insert(date, vec![event]);
+            }
+        }
+
+        state.trim_events_to_25_month_span();
+
+        // Current month event should still be there
+        assert!(state.events.contains_key(&current_month_date));
+
+        // Verify we have the event
+        let events = state.events.get(&current_month_date).unwrap();
+        assert_eq!(events[0].summary, Some("Current Month".to_string()));
     }
 }
