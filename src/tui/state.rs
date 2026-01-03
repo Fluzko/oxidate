@@ -9,6 +9,12 @@ pub enum ViewFocus {
     Events,
 }
 
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum EventsViewMode {
+    List,
+    Details { event_index: usize },
+}
+
 #[derive(Debug)]
 pub struct AppState {
     pub selected_date: NaiveDate,
@@ -18,6 +24,8 @@ pub struct AppState {
     pub loading: bool,
     pub error: Option<String>,
     pub view_focus: ViewFocus,
+    pub selected_event_index: Option<usize>,
+    pub events_view_mode: EventsViewMode,
 }
 
 impl AppState {
@@ -31,6 +39,8 @@ impl AppState {
             loading: true,
             error: None,
             view_focus: ViewFocus::Calendar,
+            selected_event_index: None,
+            events_view_mode: EventsViewMode::List,
         }
     }
 
@@ -65,6 +75,50 @@ impl AppState {
 
     pub fn jump_to_today(&mut self) {
         self.selected_date = self.today;
+    }
+
+    pub fn move_event_selection_down(&mut self) {
+        let events = self.get_events_for_date(self.selected_date);
+        let event_count = events.len();
+
+        if event_count == 0 {
+            return;
+        }
+
+        self.selected_event_index = Some(match self.selected_event_index {
+            None => 0,
+            Some(idx) => (idx + 1) % event_count,
+        });
+    }
+
+    pub fn move_event_selection_up(&mut self) {
+        let events = self.get_events_for_date(self.selected_date);
+        let event_count = events.len();
+
+        if event_count == 0 {
+            return;
+        }
+
+        self.selected_event_index = Some(match self.selected_event_index {
+            None => event_count - 1,
+            Some(0) => event_count - 1,
+            Some(idx) => idx - 1,
+        });
+    }
+
+    pub fn select_event(&mut self) {
+        if let Some(index) = self.selected_event_index {
+            self.events_view_mode = EventsViewMode::Details { event_index: index };
+        }
+    }
+
+    pub fn exit_event_details(&mut self) {
+        self.events_view_mode = EventsViewMode::List;
+    }
+
+    pub fn reset_event_selection(&mut self) {
+        self.selected_event_index = None;
+        self.events_view_mode = EventsViewMode::List;
     }
 }
 
@@ -294,5 +348,204 @@ mod tests {
         state.move_to_next_week();
 
         assert_eq!(state.today, original_today);
+    }
+
+    #[test]
+    fn test_event_selection_initialization() {
+        let state = AppState::new();
+        assert_eq!(state.selected_event_index, None);
+        assert!(matches!(state.events_view_mode, EventsViewMode::List));
+    }
+
+    #[test]
+    fn test_move_event_selection_down() {
+        let mut state = AppState::new();
+        let date = NaiveDate::from_ymd_opt(2025, 6, 15).unwrap();
+        state.selected_date = date;
+
+        // Add some test events
+        use crate::calendar::models::{Event, EventDateTime};
+        let events = vec![
+            Event {
+                id: "1".to_string(),
+                summary: Some("Event 1".to_string()),
+                description: None,
+                location: None,
+                start: EventDateTime {
+                    date_time: Some("2025-06-15T10:00:00Z".to_string()),
+                    date: None,
+                    time_zone: None,
+                },
+                end: EventDateTime {
+                    date_time: Some("2025-06-15T11:00:00Z".to_string()),
+                    date: None,
+                    time_zone: None,
+                },
+                status: None,
+                html_link: None,
+                attendees: None,
+            },
+            Event {
+                id: "2".to_string(),
+                summary: Some("Event 2".to_string()),
+                description: None,
+                location: None,
+                start: EventDateTime {
+                    date_time: Some("2025-06-15T14:00:00Z".to_string()),
+                    date: None,
+                    time_zone: None,
+                },
+                end: EventDateTime {
+                    date_time: Some("2025-06-15T15:00:00Z".to_string()),
+                    date: None,
+                    time_zone: None,
+                },
+                status: None,
+                html_link: None,
+                attendees: None,
+            },
+        ];
+        state.events.insert(date, events);
+
+        // Start with no selection, should select index 0
+        assert_eq!(state.selected_event_index, None);
+        state.move_event_selection_down();
+        assert_eq!(state.selected_event_index, Some(0));
+
+        // Move down to index 1
+        state.move_event_selection_down();
+        assert_eq!(state.selected_event_index, Some(1));
+
+        // Wrap around to index 0
+        state.move_event_selection_down();
+        assert_eq!(state.selected_event_index, Some(0));
+    }
+
+    #[test]
+    fn test_move_event_selection_up() {
+        let mut state = AppState::new();
+        let date = NaiveDate::from_ymd_opt(2025, 6, 15).unwrap();
+        state.selected_date = date;
+
+        // Add some test events
+        use crate::calendar::models::{Event, EventDateTime};
+        let events = vec![
+            Event {
+                id: "1".to_string(),
+                summary: Some("Event 1".to_string()),
+                description: None,
+                location: None,
+                start: EventDateTime {
+                    date_time: Some("2025-06-15T10:00:00Z".to_string()),
+                    date: None,
+                    time_zone: None,
+                },
+                end: EventDateTime {
+                    date_time: Some("2025-06-15T11:00:00Z".to_string()),
+                    date: None,
+                    time_zone: None,
+                },
+                status: None,
+                html_link: None,
+                attendees: None,
+            },
+            Event {
+                id: "2".to_string(),
+                summary: Some("Event 2".to_string()),
+                description: None,
+                location: None,
+                start: EventDateTime {
+                    date_time: Some("2025-06-15T14:00:00Z".to_string()),
+                    date: None,
+                    time_zone: None,
+                },
+                end: EventDateTime {
+                    date_time: Some("2025-06-15T15:00:00Z".to_string()),
+                    date: None,
+                    time_zone: None,
+                },
+                status: None,
+                html_link: None,
+                attendees: None,
+            },
+        ];
+        state.events.insert(date, events);
+
+        // Start with no selection, should select last index (1)
+        assert_eq!(state.selected_event_index, None);
+        state.move_event_selection_up();
+        assert_eq!(state.selected_event_index, Some(1));
+
+        // Move up to index 0
+        state.move_event_selection_up();
+        assert_eq!(state.selected_event_index, Some(0));
+
+        // Wrap around to last index (1)
+        state.move_event_selection_up();
+        assert_eq!(state.selected_event_index, Some(1));
+    }
+
+    #[test]
+    fn test_move_event_selection_no_events() {
+        let mut state = AppState::new();
+        let date = NaiveDate::from_ymd_opt(2025, 6, 15).unwrap();
+        state.selected_date = date;
+
+        // No events for this date
+        assert_eq!(state.selected_event_index, None);
+
+        state.move_event_selection_down();
+        assert_eq!(state.selected_event_index, None);
+
+        state.move_event_selection_up();
+        assert_eq!(state.selected_event_index, None);
+    }
+
+    #[test]
+    fn test_select_event() {
+        let mut state = AppState::new();
+        state.selected_event_index = Some(2);
+
+        assert!(matches!(state.events_view_mode, EventsViewMode::List));
+
+        state.select_event();
+
+        assert!(matches!(
+            state.events_view_mode,
+            EventsViewMode::Details { event_index: 2 }
+        ));
+    }
+
+    #[test]
+    fn test_select_event_with_no_selection() {
+        let mut state = AppState::new();
+        assert_eq!(state.selected_event_index, None);
+
+        state.select_event();
+
+        // Should still be in List mode since no event is selected
+        assert!(matches!(state.events_view_mode, EventsViewMode::List));
+    }
+
+    #[test]
+    fn test_exit_event_details() {
+        let mut state = AppState::new();
+        state.events_view_mode = EventsViewMode::Details { event_index: 1 };
+
+        state.exit_event_details();
+
+        assert!(matches!(state.events_view_mode, EventsViewMode::List));
+    }
+
+    #[test]
+    fn test_reset_event_selection() {
+        let mut state = AppState::new();
+        state.selected_event_index = Some(3);
+        state.events_view_mode = EventsViewMode::Details { event_index: 3 };
+
+        state.reset_event_selection();
+
+        assert_eq!(state.selected_event_index, None);
+        assert!(matches!(state.events_view_mode, EventsViewMode::List));
     }
 }
