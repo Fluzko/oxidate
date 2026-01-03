@@ -78,7 +78,9 @@ impl<'a> Widget for EventDetailsWidget<'a> {
         let summary = event.summary.as_deref().unwrap_or("(No title)");
         lines.push(Line::from(Span::styled(
             summary,
-            Style::default().fg(Color::Cyan).add_modifier(Modifier::BOLD),
+            Style::default()
+                .fg(Color::Cyan)
+                .add_modifier(Modifier::BOLD),
         )));
         lines.push(Line::from(""));
 
@@ -135,7 +137,11 @@ impl<'a> Widget for EventDetailsWidget<'a> {
                         _ => "-",
                     };
 
-                    let optional_marker = if attendee.optional == Some(true) { " (optional)" } else { "" };
+                    let optional_marker = if attendee.optional == Some(true) {
+                        " (optional)"
+                    } else {
+                        ""
+                    };
 
                     lines.push(Line::from(Span::styled(
                         format!("  {} {}{}", status_icon, name, optional_marker),
@@ -159,11 +165,12 @@ impl<'a> Widget for EventDetailsWidget<'a> {
         // Help hint
         lines.push(Line::from(Span::styled(
             "Press Esc to return to list",
-            Style::default().fg(Color::DarkGray).add_modifier(Modifier::ITALIC),
+            Style::default()
+                .fg(Color::DarkGray)
+                .add_modifier(Modifier::ITALIC),
         )));
 
-        let paragraph = Paragraph::new(lines)
-            .wrap(Wrap { trim: true });
+        let paragraph = Paragraph::new(lines).wrap(Wrap { trim: true });
         paragraph.render(inner, buf);
     }
 }

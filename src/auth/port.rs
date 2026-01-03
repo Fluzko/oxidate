@@ -4,8 +4,7 @@ pub struct PortSelector;
 
 impl PortSelector {
     pub fn find_available() -> Result<u16> {
-        portpicker::pick_unused_port()
-            .context("No available ports found")
+        portpicker::pick_unused_port().context("No available ports found")
     }
 }
 

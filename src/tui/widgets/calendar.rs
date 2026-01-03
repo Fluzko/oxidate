@@ -233,6 +233,9 @@ mod tests {
 
         let widget = CalendarWidget::new(&state);
 
-        assert_eq!(widget.state.today, NaiveDate::from_ymd_opt(2025, 6, 15).unwrap());
+        assert_eq!(
+            widget.state.today,
+            NaiveDate::from_ymd_opt(2025, 6, 15).unwrap()
+        );
     }
 }

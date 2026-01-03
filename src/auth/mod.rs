@@ -1,9 +1,9 @@
-pub mod tokens;
-pub mod port;
 pub mod oauth;
+pub mod port;
+pub mod tokens;
 
-pub use tokens::Tokens;
 pub use oauth::OAuthClient;
+pub use tokens::Tokens;
 
 use anyhow::Result;
 

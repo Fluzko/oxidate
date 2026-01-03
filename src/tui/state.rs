@@ -45,15 +45,24 @@ impl AppState {
     }
 
     pub fn get_events_for_date(&self, date: NaiveDate) -> Vec<&Event> {
-        self.events.get(&date).map(|v| v.iter().collect()).unwrap_or_default()
+        self.events
+            .get(&date)
+            .map(|v| v.iter().collect())
+            .unwrap_or_default()
     }
 
     pub fn has_events(&self, date: NaiveDate) -> bool {
-        self.events.get(&date).map(|v| !v.is_empty()).unwrap_or(false)
+        self.events
+            .get(&date)
+            .map(|v| !v.is_empty())
+            .unwrap_or(false)
     }
 
     pub fn move_selected_date(&mut self, days: i64) {
-        if let Some(new_date) = self.selected_date.checked_add_signed(chrono::Duration::days(days)) {
+        if let Some(new_date) = self
+            .selected_date
+            .checked_add_signed(chrono::Duration::days(days))
+        {
             self.selected_date = new_date;
         }
     }
@@ -192,10 +201,16 @@ mod tests {
         state.selected_date = initial_date;
 
         state.move_selected_date(1);
-        assert_eq!(state.selected_date, NaiveDate::from_ymd_opt(2025, 6, 16).unwrap());
+        assert_eq!(
+            state.selected_date,
+            NaiveDate::from_ymd_opt(2025, 6, 16).unwrap()
+        );
 
         state.move_selected_date(-3);
-        assert_eq!(state.selected_date, NaiveDate::from_ymd_opt(2025, 6, 13).unwrap());
+        assert_eq!(
+            state.selected_date,
+            NaiveDate::from_ymd_opt(2025, 6, 13).unwrap()
+        );
     }
 
     #[test]
@@ -205,10 +220,16 @@ mod tests {
         state.selected_date = initial_date;
 
         state.move_to_next_week();
-        assert_eq!(state.selected_date, NaiveDate::from_ymd_opt(2025, 6, 22).unwrap());
+        assert_eq!(
+            state.selected_date,
+            NaiveDate::from_ymd_opt(2025, 6, 22).unwrap()
+        );
 
         state.move_to_prev_week();
-        assert_eq!(state.selected_date, NaiveDate::from_ymd_opt(2025, 6, 15).unwrap());
+        assert_eq!(
+            state.selected_date,
+            NaiveDate::from_ymd_opt(2025, 6, 15).unwrap()
+        );
     }
 
     #[test]

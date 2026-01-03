@@ -18,10 +18,9 @@ impl Tokens {
     }
 
     fn get_storage_path() -> Result<PathBuf> {
-        let config_dir = dirs::config_dir()
-            .context("Failed to get config directory")?;
+        let config_dir = dirs::config_dir().context("Failed to get config directory")?;
 
-        let app_config_dir = config_dir.join("calendar-tui");
+        let app_config_dir = config_dir.join("oxidate");
         Ok(app_config_dir.join("token.json"))
     }
 
@@ -37,15 +36,12 @@ impl Tokens {
 
         // Create parent directory if it doesn't exist
         if let Some(parent) = tokens_path.parent() {
-            fs::create_dir_all(parent)
-                .context("Failed to create config directory")?;
+            fs::create_dir_all(parent).context("Failed to create config directory")?;
         }
 
-        let json = serde_json::to_string_pretty(self)
-            .context("Failed to serialize tokens")?;
+        let json = serde_json::to_string_pretty(self).context("Failed to serialize tokens")?;
 
-        fs::write(&tokens_path, json)
-            .context("Failed to write tokens file")?;
+        fs::write(&tokens_path, json).context("Failed to write tokens file")?;
 
         Ok(())
     }
@@ -53,11 +49,9 @@ impl Tokens {
     pub fn load() -> Result<Self> {
         let tokens_path = Self::get_storage_path()?;
 
-        let json = fs::read_to_string(&tokens_path)
-            .context("Failed to read tokens file")?;
+        let json = fs::read_to_string(&tokens_path).context("Failed to read tokens file")?;
 
-        let tokens: Self = serde_json::from_str(&json)
-            .context("Failed to deserialize tokens")?;
+        let tokens: Self = serde_json::from_str(&json).context("Failed to deserialize tokens")?;
 
         Ok(tokens)
     }
@@ -66,8 +60,7 @@ impl Tokens {
         let tokens_path = Self::get_storage_path()?;
 
         if tokens_path.exists() {
-            fs::remove_file(&tokens_path)
-                .context("Failed to delete tokens file")?;
+            fs::remove_file(&tokens_path).context("Failed to delete tokens file")?;
         }
 
         Ok(())
@@ -78,26 +71,21 @@ impl Tokens {
     fn save_to(&self, path: &std::path::Path) -> Result<()> {
         // Create parent directory if it doesn't exist
         if let Some(parent) = path.parent() {
-            fs::create_dir_all(parent)
-                .context("Failed to create config directory")?;
+            fs::create_dir_all(parent).context("Failed to create config directory")?;
         }
 
-        let json = serde_json::to_string_pretty(self)
-            .context("Failed to serialize tokens")?;
+        let json = serde_json::to_string_pretty(self).context("Failed to serialize tokens")?;
 
-        fs::write(path, json)
-            .context("Failed to write tokens file")?;
+        fs::write(path, json).context("Failed to write tokens file")?;
 
         Ok(())
     }
 
     #[cfg(test)]
     fn load_from(path: &std::path::Path) -> Result<Self> {
-        let json = fs::read_to_string(path)
-            .context("Failed to read tokens file")?;
+        let json = fs::read_to_string(path).context("Failed to read tokens file")?;
 
-        let tokens: Self = serde_json::from_str(&json)
-            .context("Failed to deserialize tokens")?;
+        let tokens: Self = serde_json::from_str(&json).context("Failed to deserialize tokens")?;
 
         Ok(tokens)
     }
@@ -105,8 +93,7 @@ impl Tokens {
     #[cfg(test)]
     fn delete_at(path: &std::path::Path) -> Result<()> {
         if path.exists() {
-            fs::remove_file(path)
-                .context("Failed to delete tokens file")?;
+            fs::remove_file(path).context("Failed to delete tokens file")?;
         }
 
         Ok(())
@@ -119,10 +106,7 @@ mod tests {
 
     #[test]
     fn test_tokens_new() {
-        let tokens = Tokens::new(
-            "access123".to_string(),
-            "refresh456".to_string()
-        );
+        let tokens = Tokens::new("access123".to_string(), "refresh456".to_string());
 
         assert_eq!(tokens.access_token, "access123");
         assert_eq!(tokens.refresh_token, "refresh456");
@@ -135,11 +119,13 @@ mod tests {
 
         let original_tokens = Tokens::new(
             "test_access_token".to_string(),
-            "test_refresh_token".to_string()
+            "test_refresh_token".to_string(),
         );
 
         // Save tokens
-        original_tokens.save_to(&token_path).expect("Failed to save tokens");
+        original_tokens
+            .save_to(&token_path)
+            .expect("Failed to save tokens");
 
         // Verify file exists
         assert!(token_path.exists());
@@ -159,10 +145,7 @@ mod tests {
         let token_path = temp_dir.path().join("tokens.json");
 
         // Create and save tokens
-        let tokens = Tokens::new(
-            "test_access".to_string(),
-            "test_refresh".to_string()
-        );
+        let tokens = Tokens::new("test_access".to_string(), "test_refresh".to_string());
 
         tokens.save_to(&token_path).expect("Failed to save tokens");
         assert!(token_path.exists());
@@ -210,7 +193,7 @@ mod tests {
 
         let original_tokens = Tokens::new(
             "integration_access".to_string(),
-            "integration_refresh".to_string()
+            "integration_refresh".to_string(),
         );
 
         // Save using real path

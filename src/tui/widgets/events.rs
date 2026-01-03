@@ -54,10 +54,7 @@ impl<'a> Widget for EventListWidget<'a> {
             Style::default()
         };
 
-        let title = format!(
-            " Events for {} ",
-            selected_date.format("%B %d, %Y")
-        );
+        let title = format!(" Events for {} ", selected_date.format("%B %d, %Y"));
 
         let block = Block::default()
             .borders(Borders::ALL)
@@ -71,11 +68,12 @@ impl<'a> Widget for EventListWidget<'a> {
             // No events for this date
             let no_events_text = vec![Line::from(Span::styled(
                 "No events for this date",
-                Style::default().fg(Color::DarkGray).add_modifier(Modifier::ITALIC),
+                Style::default()
+                    .fg(Color::DarkGray)
+                    .add_modifier(Modifier::ITALIC),
             ))];
 
-            let paragraph = Paragraph::new(no_events_text)
-                .wrap(Wrap { trim: true });
+            let paragraph = Paragraph::new(no_events_text).wrap(Wrap { trim: true });
             paragraph.render(inner, buf);
             return;
         }
@@ -85,7 +83,7 @@ impl<'a> Widget for EventListWidget<'a> {
 
         for (i, event) in events.iter().enumerate() {
             let is_selected = self.state.selected_event_index == Some(i)
-                             && self.state.view_focus == ViewFocus::Events;
+                && self.state.view_focus == ViewFocus::Events;
 
             // Selection indicator and time
             let time_str = Self::format_event_time(event);
@@ -143,12 +141,13 @@ impl<'a> Widget for EventListWidget<'a> {
             lines.push(Line::from(""));
             lines.push(Line::from(Span::styled(
                 "(\u{2191}\u{2193} to select, Enter for details)",
-                Style::default().fg(Color::DarkGray).add_modifier(Modifier::ITALIC),
+                Style::default()
+                    .fg(Color::DarkGray)
+                    .add_modifier(Modifier::ITALIC),
             )));
         }
 
-        let paragraph = Paragraph::new(lines)
-            .wrap(Wrap { trim: true });
+        let paragraph = Paragraph::new(lines).wrap(Wrap { trim: true });
         paragraph.render(inner, buf);
     }
 }

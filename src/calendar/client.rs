@@ -1,13 +1,13 @@
 use anyhow::{Context, Result};
 use chrono::{DateTime, Utc};
+use oauth2::reqwest::async_http_client;
 use oauth2::{
     basic::BasicClient, AuthUrl, ClientId, ClientSecret, RefreshToken, TokenResponse, TokenUrl,
 };
-use oauth2::reqwest::async_http_client;
 use reqwest;
 
+use super::models::{Calendar, CalendarListResponse, Event, EventsListResponse};
 use crate::auth::Tokens;
-use super::models::{Calendar, Event, CalendarListResponse, EventsListResponse};
 
 pub struct CalendarClient {
     tokens: Tokens,
@@ -24,7 +24,9 @@ impl CalendarClient {
             ClientId::new(client_id),
             Some(ClientSecret::new(client_secret)),
             AuthUrl::new("https://accounts.google.com/o/oauth2/v2/auth".to_string())?,
-            Some(TokenUrl::new("https://oauth2.googleapis.com/token".to_string())?),
+            Some(TokenUrl::new(
+                "https://oauth2.googleapis.com/token".to_string(),
+            )?),
         );
 
         let http_client = reqwest::Client::new();
@@ -100,14 +102,11 @@ impl CalendarClient {
                         cal_id
                     );
 
-                    let mut request = http_client
-                        .get(&url)
-                        .bearer_auth(access_token)
-                        .query(&[
-                            ("maxResults", "2500"),
-                            ("timeMin", &time_min_rfc),
-                            ("timeMax", &time_max_rfc),
-                        ]);
+                    let mut request = http_client.get(&url).bearer_auth(access_token).query(&[
+                        ("maxResults", "2500"),
+                        ("timeMin", &time_min_rfc),
+                        ("timeMax", &time_max_rfc),
+                    ]);
 
                     if let Some(ref token) = current_page_token {
                         request = request.query(&[("pageToken", token.as_str())]);
@@ -179,7 +178,8 @@ impl CalendarClient {
     async fn refresh_access_token(&mut self) -> Result<()> {
         let refresh_token = RefreshToken::new(self.tokens.refresh_token.clone());
 
-        let token_result = self.oauth_client
+        let token_result = self
+            .oauth_client
             .exchange_refresh_token(&refresh_token)
             .request_async(async_http_client)
             .await
@@ -194,7 +194,8 @@ impl CalendarClient {
         }
 
         // Save tokens to disk
-        self.tokens.save()
+        self.tokens
+            .save()
             .context("Failed to save refreshed tokens")?;
 
         Ok(())
