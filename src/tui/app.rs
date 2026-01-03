@@ -133,6 +133,18 @@ fn run_app(
                 }
             }
         }
+
+        // Auto-refresh date range if needed after navigation
+        if app_state.needs_date_range_refresh()
+            && data_loader.is_none()
+            && available_client.is_some()
+        {
+            let new_range = DateRange::five_month_span(app_state.selected_date);
+            app_state.update_date_range(new_range.clone());
+
+            let client = available_client.take().unwrap();
+            *data_loader = Some(DataLoader::new(client, new_range));
+        }
     }
 
     Ok(())
