@@ -1,11 +1,11 @@
 mod auth;
-mod cli;
 mod calendar;
+mod cli;
 mod tui;
 
-use cli::Cli;
 use auth::Tokens;
 use calendar::client::CalendarClient;
+use cli::Cli;
 
 #[tokio::main]
 async fn main() {
@@ -29,8 +29,9 @@ async fn main() {
     if args.is_login() {
         println!("Authentication successful!");
         println!("Your credentials have been saved.");
+
         println!("\nRun without arguments to launch the calendar:");
-        println!("  cargo run");
+        println!("  oxidate");
         return;
     }
 

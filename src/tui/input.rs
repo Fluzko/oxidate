@@ -97,8 +97,8 @@ fn handle_events_details_input(key: KeyEvent, state: &mut AppState) -> InputActi
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crossterm::event::{KeyCode, KeyEvent, KeyModifiers};
     use chrono::NaiveDate;
+    use crossterm::event::{KeyCode, KeyEvent, KeyModifiers};
 
     fn create_key_event(code: KeyCode) -> KeyEvent {
         KeyEvent::new(code, KeyModifiers::NONE)
@@ -132,18 +132,30 @@ mod tests {
 
         // Move right
         handle_key_event(create_key_event(KeyCode::Right), &mut state);
-        assert_eq!(state.selected_date, NaiveDate::from_ymd_opt(2025, 6, 16).unwrap());
+        assert_eq!(
+            state.selected_date,
+            NaiveDate::from_ymd_opt(2025, 6, 16).unwrap()
+        );
 
         // Move left
         handle_key_event(create_key_event(KeyCode::Left), &mut state);
-        assert_eq!(state.selected_date, NaiveDate::from_ymd_opt(2025, 6, 15).unwrap());
+        assert_eq!(
+            state.selected_date,
+            NaiveDate::from_ymd_opt(2025, 6, 15).unwrap()
+        );
 
         // Test vim-style keys
         handle_key_event(create_key_event(KeyCode::Char('l')), &mut state);
-        assert_eq!(state.selected_date, NaiveDate::from_ymd_opt(2025, 6, 16).unwrap());
+        assert_eq!(
+            state.selected_date,
+            NaiveDate::from_ymd_opt(2025, 6, 16).unwrap()
+        );
 
         handle_key_event(create_key_event(KeyCode::Char('h')), &mut state);
-        assert_eq!(state.selected_date, NaiveDate::from_ymd_opt(2025, 6, 15).unwrap());
+        assert_eq!(
+            state.selected_date,
+            NaiveDate::from_ymd_opt(2025, 6, 15).unwrap()
+        );
     }
 
     #[test]
@@ -155,18 +167,30 @@ mod tests {
 
         // Move down (next week)
         handle_key_event(create_key_event(KeyCode::Down), &mut state);
-        assert_eq!(state.selected_date, NaiveDate::from_ymd_opt(2025, 6, 22).unwrap());
+        assert_eq!(
+            state.selected_date,
+            NaiveDate::from_ymd_opt(2025, 6, 22).unwrap()
+        );
 
         // Move up (prev week)
         handle_key_event(create_key_event(KeyCode::Up), &mut state);
-        assert_eq!(state.selected_date, NaiveDate::from_ymd_opt(2025, 6, 15).unwrap());
+        assert_eq!(
+            state.selected_date,
+            NaiveDate::from_ymd_opt(2025, 6, 15).unwrap()
+        );
 
         // Test vim-style keys
         handle_key_event(create_key_event(KeyCode::Char('j')), &mut state);
-        assert_eq!(state.selected_date, NaiveDate::from_ymd_opt(2025, 6, 22).unwrap());
+        assert_eq!(
+            state.selected_date,
+            NaiveDate::from_ymd_opt(2025, 6, 22).unwrap()
+        );
 
         handle_key_event(create_key_event(KeyCode::Char('k')), &mut state);
-        assert_eq!(state.selected_date, NaiveDate::from_ymd_opt(2025, 6, 15).unwrap());
+        assert_eq!(
+            state.selected_date,
+            NaiveDate::from_ymd_opt(2025, 6, 15).unwrap()
+        );
     }
 
     #[test]
@@ -231,27 +255,25 @@ mod tests {
         state.view_focus = ViewFocus::Calendar; // Focus on Calendar
 
         // Add events to test selection
-        let events = vec![
-            Event {
-                id: "1".to_string(),
-                summary: Some("Event 1".to_string()),
-                description: None,
-                location: None,
-                start: EventDateTime {
-                    date_time: Some("2025-06-15T10:00:00Z".to_string()),
-                    date: None,
-                    time_zone: None,
-                },
-                end: EventDateTime {
-                    date_time: Some("2025-06-15T11:00:00Z".to_string()),
-                    date: None,
-                    time_zone: None,
-                },
-                status: None,
-                html_link: None,
-                attendees: None,
+        let events = vec![Event {
+            id: "1".to_string(),
+            summary: Some("Event 1".to_string()),
+            description: None,
+            location: None,
+            start: EventDateTime {
+                date_time: Some("2025-06-15T10:00:00Z".to_string()),
+                date: None,
+                time_zone: None,
             },
-        ];
+            end: EventDateTime {
+                date_time: Some("2025-06-15T11:00:00Z".to_string()),
+                date: None,
+                time_zone: None,
+            },
+            status: None,
+            html_link: None,
+            attendees: None,
+        }];
         state.events.insert(date, events);
 
         // Up/Down should NOT affect event selection when Calendar focused
@@ -272,27 +294,25 @@ mod tests {
         state.view_focus = ViewFocus::Events;
 
         // Add an event
-        let events = vec![
-            Event {
-                id: "1".to_string(),
-                summary: Some("Event 1".to_string()),
-                description: None,
-                location: None,
-                start: EventDateTime {
-                    date_time: Some("2025-06-15T10:00:00Z".to_string()),
-                    date: None,
-                    time_zone: None,
-                },
-                end: EventDateTime {
-                    date_time: Some("2025-06-15T11:00:00Z".to_string()),
-                    date: None,
-                    time_zone: None,
-                },
-                status: None,
-                html_link: None,
-                attendees: None,
+        let events = vec![Event {
+            id: "1".to_string(),
+            summary: Some("Event 1".to_string()),
+            description: None,
+            location: None,
+            start: EventDateTime {
+                date_time: Some("2025-06-15T10:00:00Z".to_string()),
+                date: None,
+                time_zone: None,
             },
-        ];
+            end: EventDateTime {
+                date_time: Some("2025-06-15T11:00:00Z".to_string()),
+                date: None,
+                time_zone: None,
+            },
+            status: None,
+            html_link: None,
+            attendees: None,
+        }];
         state.events.insert(date, events);
 
         // Select an event first
@@ -379,27 +399,25 @@ mod tests {
         state.view_focus = ViewFocus::Calendar;
 
         // Add an event and select it
-        let events = vec![
-            Event {
-                id: "1".to_string(),
-                summary: Some("Event 1".to_string()),
-                description: None,
-                location: None,
-                start: EventDateTime {
-                    date_time: Some("2025-06-15T10:00:00Z".to_string()),
-                    date: None,
-                    time_zone: None,
-                },
-                end: EventDateTime {
-                    date_time: Some("2025-06-15T11:00:00Z".to_string()),
-                    date: None,
-                    time_zone: None,
-                },
-                status: None,
-                html_link: None,
-                attendees: None,
+        let events = vec![Event {
+            id: "1".to_string(),
+            summary: Some("Event 1".to_string()),
+            description: None,
+            location: None,
+            start: EventDateTime {
+                date_time: Some("2025-06-15T10:00:00Z".to_string()),
+                date: None,
+                time_zone: None,
             },
-        ];
+            end: EventDateTime {
+                date_time: Some("2025-06-15T11:00:00Z".to_string()),
+                date: None,
+                time_zone: None,
+            },
+            status: None,
+            html_link: None,
+            attendees: None,
+        }];
         state.events.insert(date, events);
         state.selected_event_index = Some(0);
         state.events_view_mode = EventsViewMode::Details { event_index: 0 };

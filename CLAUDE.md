@@ -44,7 +44,7 @@ cargo fmt
 - **Version**: 0.1.0
 - **Main Dependencies**: oauth2, reqwest, tokio, serde, clap, google-calendar3, anyhow
 - **Credentials**: OAuth2 credentials embedded at compile-time via build.rs (development uses .env file)
-- **Token Storage**: `~/Library/Application Support/calendar-tui/token.json` (macOS) or `~/.config/calendar-tui/token.json` (Linux)
+- **Token Storage**: `~/Library/Application Support/oxidate/token.json` (macOS) or `~/.config/oxidate/token.json` (Linux)
 
 ## Architecture & Development Patterns
 

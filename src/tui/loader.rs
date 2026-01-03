@@ -2,10 +2,10 @@ use chrono::NaiveDate;
 use std::collections::HashMap;
 use tokio::sync::mpsc::{unbounded_channel, UnboundedReceiver};
 
-use crate::calendar::client::CalendarClient;
-use crate::calendar::models::{Calendar, Event};
 use super::fetcher::fetch_calendar_data;
 use super::state::DateRange;
+use crate::calendar::client::CalendarClient;
+use crate::calendar::models::{Calendar, Event};
 
 #[derive(Debug)]
 pub enum DataMessage {
@@ -26,7 +26,9 @@ impl DataLoader {
         let (sender, receiver) = unbounded_channel();
 
         // Send initial loading message
-        sender.send(DataMessage::Loading).expect("Failed to send loading message");
+        sender
+            .send(DataMessage::Loading)
+            .expect("Failed to send loading message");
 
         // Spawn async task using existing tokio runtime
         tokio::spawn(async move {

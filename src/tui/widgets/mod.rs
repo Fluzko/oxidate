@@ -1,7 +1,7 @@
 pub mod calendar;
-pub mod events;
 pub mod event_details;
+pub mod events;
 
 pub use calendar::CalendarWidget;
-pub use events::EventListWidget;
 pub use event_details::EventDetailsWidget;
+pub use events::EventListWidget;

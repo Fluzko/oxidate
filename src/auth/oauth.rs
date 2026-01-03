@@ -1,14 +1,14 @@
+use super::port::PortSelector;
+use super::tokens::Tokens;
 use anyhow::{Context, Result};
+use oauth2::basic::BasicClient;
+use oauth2::reqwest::async_http_client;
 use oauth2::{
     AuthUrl, AuthorizationCode, ClientId, ClientSecret, CsrfToken, RedirectUrl, Scope,
     TokenResponse, TokenUrl,
 };
-use oauth2::basic::BasicClient;
-use oauth2::reqwest::async_http_client;
 use std::io::{BufRead, BufReader, Write};
 use std::net::TcpListener;
-use super::tokens::Tokens;
-use super::port::PortSelector;
 
 pub struct OAuthClient {
     client: BasicClient,
@@ -27,7 +27,9 @@ impl OAuthClient {
             ClientId::new(client_id),
             Some(ClientSecret::new(client_secret)),
             AuthUrl::new("https://accounts.google.com/o/oauth2/v2/auth".to_string())?,
-            Some(TokenUrl::new("https://oauth2.googleapis.com/token".to_string())?),
+            Some(TokenUrl::new(
+                "https://oauth2.googleapis.com/token".to_string(),
+            )?),
         )
         .set_redirect_uri(RedirectUrl::new(redirect_url)?);
 
@@ -47,17 +49,19 @@ impl OAuthClient {
     }
 
     pub fn get_authorization_url(&self) -> (String, CsrfToken) {
-        let (url, csrf) = self.client
+        let (url, csrf) = self
+            .client
             .authorize_url(CsrfToken::new_random)
-            .add_scope(Scope::new("https://www.googleapis.com/auth/calendar".to_string()))
+            .add_scope(Scope::new(
+                "https://www.googleapis.com/auth/calendar".to_string(),
+            ))
             .url();
 
         (url.to_string(), csrf)
     }
 
     pub fn open_browser(&self, url: &str) -> Result<()> {
-        webbrowser::open(url)
-            .context("Failed to open browser")?;
+        webbrowser::open(url).context("Failed to open browser")?;
         Ok(())
     }
 
@@ -68,12 +72,12 @@ impl OAuthClient {
         println!("Waiting for OAuth callback on port {}...", self.port);
 
         // Accept one connection
-        let (mut stream, _) = listener.accept()
-            .context("Failed to accept connection")?;
+        let (mut stream, _) = listener.accept().context("Failed to accept connection")?;
 
         let mut reader = BufReader::new(&stream);
         let mut request_line = String::new();
-        reader.read_line(&mut request_line)
+        reader
+            .read_line(&mut request_line)
             .context("Failed to read request")?;
 
         // Extract the authorization code from the request
@@ -81,7 +85,8 @@ impl OAuthClient {
 
         // Send success response
         let response = "HTTP/1.1 200 OK\r\n\r\n<html><body><h1>Success!</h1><p>You can close this window and return to the application.</p></body></html>";
-        stream.write_all(response.as_bytes())
+        stream
+            .write_all(response.as_bytes())
             .context("Failed to write response")?;
 
         Ok(code)
@@ -95,8 +100,7 @@ impl OAuthClient {
         }
 
         let path = parts[1];
-        let query_start = path.find('?')
-            .context("No query parameters in request")?;
+        let query_start = path.find('?').context("No query parameters in request")?;
         let query = &path[query_start + 1..];
 
         for param in query.split('&') {
@@ -110,7 +114,8 @@ impl OAuthClient {
     }
 
     pub async fn exchange_code(&self, code: String) -> Result<Tokens> {
-        let token_result = self.client
+        let token_result = self
+            .client
             .exchange_code(AuthorizationCode::new(code))
             .request_async(async_http_client)
             .await

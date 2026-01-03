@@ -1,7 +1,7 @@
 use clap::{Parser, Subcommand};
 
 #[derive(Parser, Debug)]
-#[command(name = "ai-rust-calendar")]
+#[command(name = "oxidate")]
 #[command(about = "A TUI calendar application with Google Calendar integration", long_about = None)]
 pub struct Cli {
     #[command(subcommand)]
@@ -38,37 +38,37 @@ mod tests {
 
     #[test]
     fn test_cli_default_has_no_logout() {
-        let cli = Cli::parse_from(&["ai-rust-calendar"]);
+        let cli = Cli::parse_from(["oxidate"]);
         assert!(!cli.is_logout());
         assert!(!cli.logout);
     }
 
     #[test]
     fn test_cli_logout_flag() {
-        let cli = Cli::parse_from(&["ai-rust-calendar", "--logout"]);
+        let cli = Cli::parse_from(["oxidate", "--logout"]);
         assert!(cli.is_logout());
         assert!(cli.logout);
     }
 
     #[test]
     fn test_cli_is_logout_method() {
-        let cli_no_logout = Cli::parse_from(&["ai-rust-calendar"]);
+        let cli_no_logout = Cli::parse_from(["oxidate"]);
         assert!(!cli_no_logout.is_logout());
 
-        let cli_with_logout = Cli::parse_from(&["ai-rust-calendar", "--logout"]);
+        let cli_with_logout = Cli::parse_from(["oxidate", "--logout"]);
         assert!(cli_with_logout.is_logout());
     }
 
     #[test]
     fn test_cli_login_command() {
-        let cli = Cli::parse_from(&["ai-rust-calendar", "login"]);
+        let cli = Cli::parse_from(["oxidate", "login"]);
         assert!(cli.is_login());
         assert!(!cli.is_logout());
     }
 
     #[test]
     fn test_cli_default_no_command() {
-        let cli = Cli::parse_from(&["ai-rust-calendar"]);
+        let cli = Cli::parse_from(["oxidate"]);
         assert!(!cli.is_login());
         assert!(cli.command.is_none());
     }

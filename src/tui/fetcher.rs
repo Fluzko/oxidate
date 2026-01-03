@@ -1,5 +1,7 @@
 use anyhow::{Context, Result};
-use chrono::{DateTime, Datelike, NaiveDate, TimeZone, Timelike, Utc};
+#[allow(unused_imports)]
+use chrono::Timelike;
+use chrono::{DateTime, Datelike, NaiveDate, TimeZone, Utc};
 use std::collections::HashMap;
 
 use super::state::DateRange;

@@ -119,7 +119,10 @@ mod tests {
 
         let event_dt: EventDateTime = serde_json::from_str(json).expect("Failed to deserialize");
 
-        assert_eq!(event_dt.date_time, Some("2025-11-28T10:00:00-05:00".to_string()));
+        assert_eq!(
+            event_dt.date_time,
+            Some("2025-11-28T10:00:00-05:00".to_string())
+        );
         assert_eq!(event_dt.date, None);
         assert_eq!(event_dt.time_zone, Some("America/New_York".to_string()));
     }
@@ -186,8 +189,14 @@ mod tests {
         assert_eq!(event.summary, None);
         assert_eq!(event.description, None);
         assert_eq!(event.location, None);
-        assert_eq!(event.start.date_time, Some("2025-11-28T10:00:00-05:00".to_string()));
-        assert_eq!(event.end.date_time, Some("2025-11-28T11:00:00-05:00".to_string()));
+        assert_eq!(
+            event.start.date_time,
+            Some("2025-11-28T10:00:00-05:00".to_string())
+        );
+        assert_eq!(
+            event.end.date_time,
+            Some("2025-11-28T11:00:00-05:00".to_string())
+        );
         assert_eq!(event.status, None);
         assert_eq!(event.html_link, None);
         assert_eq!(event.attendees, None);
@@ -232,7 +241,10 @@ mod tests {
         assert_eq!(event.description, Some("Quarterly review".to_string()));
         assert_eq!(event.location, Some("Conference Room A".to_string()));
         assert_eq!(event.status, Some("confirmed".to_string()));
-        assert_eq!(event.html_link, Some("https://calendar.google.com/event?eid=abc123".to_string()));
+        assert_eq!(
+            event.html_link,
+            Some("https://calendar.google.com/event?eid=abc123".to_string())
+        );
 
         let attendees = event.attendees.unwrap();
         assert_eq!(attendees.len(), 2);
@@ -262,7 +274,8 @@ mod tests {
             ]
         }"#;
 
-        let response: CalendarListResponse = serde_json::from_str(json).expect("Failed to deserialize");
+        let response: CalendarListResponse =
+            serde_json::from_str(json).expect("Failed to deserialize");
 
         assert_eq!(response.items.len(), 2);
         assert_eq!(response.items[0].id, "cal1");
@@ -284,7 +297,8 @@ mod tests {
             "nextPageToken": "token123"
         }"#;
 
-        let response: CalendarListResponse = serde_json::from_str(json).expect("Failed to deserialize");
+        let response: CalendarListResponse =
+            serde_json::from_str(json).expect("Failed to deserialize");
 
         assert_eq!(response.items.len(), 1);
         assert_eq!(response.next_page_token, Some("token123".to_string()));
@@ -307,7 +321,8 @@ mod tests {
             ]
         }"#;
 
-        let response: EventsListResponse = serde_json::from_str(json).expect("Failed to deserialize");
+        let response: EventsListResponse =
+            serde_json::from_str(json).expect("Failed to deserialize");
 
         assert_eq!(response.items.len(), 1);
         assert_eq!(response.items[0].id, "event1");
@@ -331,9 +346,13 @@ mod tests {
             "nextPageToken": "next_page_token_xyz"
         }"#;
 
-        let response: EventsListResponse = serde_json::from_str(json).expect("Failed to deserialize");
+        let response: EventsListResponse =
+            serde_json::from_str(json).expect("Failed to deserialize");
 
         assert_eq!(response.items.len(), 1);
-        assert_eq!(response.next_page_token, Some("next_page_token_xyz".to_string()));
+        assert_eq!(
+            response.next_page_token,
+            Some("next_page_token_xyz".to_string())
+        );
     }
 }

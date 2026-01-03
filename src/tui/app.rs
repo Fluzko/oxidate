@@ -1,7 +1,7 @@
 use anyhow::Result;
 use chrono::Local;
 use crossterm::{
-    event::{self, Event, KeyEvent},
+    event::{self, Event},
     execute,
     terminal::{disable_raw_mode, enable_raw_mode, EnterAlternateScreen, LeaveAlternateScreen},
 };
@@ -16,13 +16,13 @@ use ratatui::{
 use std::io;
 use std::time::Duration;
 
-use crate::calendar::client::CalendarClient;
 use super::{
     input::{handle_key_event, InputAction},
     loader::{DataLoader, DataMessage},
     state::{AppState, DateRange, EventsViewMode, ViewFocus},
     widgets::{CalendarWidget, EventDetailsWidget, EventListWidget},
 };
+use crate::calendar::client::CalendarClient;
 
 pub fn run_tui(client: CalendarClient) -> Result<()> {
     // Setup terminal
@@ -135,7 +135,9 @@ fn render_status_bar(f: &mut ratatui::Frame, app_state: &AppState) {
     let status_text = if app_state.loading {
         vec![Line::from(Span::styled(
             "Loading calendars and events...",
-            Style::default().fg(Color::Yellow).add_modifier(Modifier::BOLD),
+            Style::default()
+                .fg(Color::Yellow)
+                .add_modifier(Modifier::BOLD),
         ))]
     } else if let Some(ref error) = app_state.error {
         vec![Line::from(Span::styled(
@@ -163,7 +165,10 @@ fn render_status_bar(f: &mut ratatui::Frame, app_state: &AppState) {
             (ViewFocus::Events, EventsViewMode::List) => {
                 vec![Line::from(vec![
                     Span::raw("Keys: "),
-                    Span::styled("\u{2191}\u{2193}", Style::default().add_modifier(Modifier::BOLD)),
+                    Span::styled(
+                        "\u{2191}\u{2193}",
+                        Style::default().add_modifier(Modifier::BOLD),
+                    ),
                     Span::raw(" Select | "),
                     Span::styled("Enter", Style::default().add_modifier(Modifier::BOLD)),
                     Span::raw(" Details | "),
@@ -189,12 +194,9 @@ fn render_status_bar(f: &mut ratatui::Frame, app_state: &AppState) {
         }
     };
 
-    let status_block = Block::default()
-        .borders(Borders::TOP)
-        .title(" Status ");
+    let status_block = Block::default().borders(Borders::TOP).title(" Status ");
 
-    let status_paragraph = Paragraph::new(status_text)
-        .block(status_block);
+    let status_paragraph = Paragraph::new(status_text).block(status_block);
 
     f.render_widget(status_paragraph, status_area);
 }
