@@ -820,10 +820,13 @@ mod tests {
 
         // Add events centered on selected date (Jan 2024) - 25 months worth
         for month_offset in -12i32..=12 {
-            let date = state.selected_date
+            let date = state
+                .selected_date
                 .checked_add_signed(chrono::Duration::days(month_offset as i64 * 30))
                 .unwrap();
-            if date.month() != current_month_date.month() || date.year() != current_month_date.year() {
+            if date.month() != current_month_date.month()
+                || date.year() != current_month_date.year()
+            {
                 let event = Event {
                     id: format!("event_{}", month_offset),
                     summary: Some("Test".to_string()),
