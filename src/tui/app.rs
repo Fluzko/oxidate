@@ -64,17 +64,25 @@ fn run_app(
                         app_state.loading = true;
                         app_state.error = None;
                     }
-                    DataMessage::Success { calendars, events } => {
+                    DataMessage::Success {
+                        calendars,
+                        events,
+                        client,
+                    } => {
                         app_state.calendars = calendars;
                         app_state.events = events;
                         app_state.loading = false;
                         app_state.error = None;
                         *data_loader = None; // Drop loader after success
+                        // TODO: Store client for reuse (Step 3)
+                        drop(client); // Temporary: drop client until Step 3
                     }
-                    DataMessage::Error(err) => {
+                    DataMessage::Error { error, client } => {
                         app_state.loading = false;
-                        app_state.error = Some(err);
+                        app_state.error = Some(error);
                         *data_loader = None; // Drop loader after error
+                        // TODO: Store client for reuse (Step 3)
+                        drop(client); // Temporary: drop client until Step 3
                     }
                 }
             }
