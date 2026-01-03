@@ -9,6 +9,7 @@ use reqwest;
 use super::models::{Calendar, CalendarListResponse, Event, EventsListResponse};
 use crate::auth::Tokens;
 
+#[derive(Debug)]
 pub struct CalendarClient {
     tokens: Tokens,
     oauth_client: BasicClient,

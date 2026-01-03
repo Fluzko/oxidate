@@ -13,8 +13,12 @@ pub enum DataMessage {
     Success {
         calendars: Vec<Calendar>,
         events: HashMap<NaiveDate, Vec<Event>>,
+        client: CalendarClient,
     },
-    Error(String),
+    Error {
+        error: String,
+        client: CalendarClient,
+    },
 }
 
 pub struct DataLoader {
@@ -38,10 +42,17 @@ impl DataLoader {
             // Send result through channel
             match result {
                 Ok((calendars, events)) => {
-                    let _ = sender.send(DataMessage::Success { calendars, events });
+                    let _ = sender.send(DataMessage::Success {
+                        calendars,
+                        events,
+                        client,
+                    });
                 }
                 Err(e) => {
-                    let _ = sender.send(DataMessage::Error(e.to_string()));
+                    let _ = sender.send(DataMessage::Error {
+                        error: e.to_string(),
+                        client,
+                    });
                 }
             }
         });
@@ -64,14 +75,8 @@ mod tests {
         let loading = DataMessage::Loading;
         assert!(matches!(loading, DataMessage::Loading));
 
-        let success = DataMessage::Success {
-            calendars: Vec::new(),
-            events: HashMap::new(),
-        };
-        assert!(matches!(success, DataMessage::Success { .. }));
-
-        let error = DataMessage::Error("test error".to_string());
-        assert!(matches!(error, DataMessage::Error(_)));
+        // Note: We can't easily create CalendarClient instances in tests without OAuth setup,
+        // so Success and Error variants are tested via integration tests
     }
 
     #[test]
