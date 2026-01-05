@@ -165,8 +165,9 @@ Detailed explanation of changes:
 
 **Branch Naming:**
 - Format: `TICKET-ID` (e.g., `MFLP-8`)
-- Create branch at start of ticket work
+- Create branch via worktree script at start of ticket work
 - One branch per ticket
+- Branch lives in its own worktree directory
 
 ## Quick Reference for Adding Features
 
@@ -198,11 +199,78 @@ The project uses these exact column names in Jira:
 
 **Workflow:**
 1. Start ticket → Move to `EN CURSO`
-2. Create branch: `TICKET-ID` format
-3. Implement feature following TDD + Commit Strategy
-4. Create PR → Move ticket to `EN REVISIÓN`
-5. After PR merge → Move ticket to `FINALIZADO`
+2. Create worktree: `./scripts/new-ticket.sh TICKET-ID`
+3. Navigate to worktree: `cd ../TICKET-ID`
+4. Implement feature following TDD + Commit Strategy
+5. Create PR → Move ticket to `EN REVISIÓN`
+6. After PR merge → Move ticket to `FINALIZADO`
+7. Remove worktree: `cd ../oxidate-main && ./scripts/remove-ticket.sh TICKET-ID`
 
 **When to Move Tickets:**
 - Always ask before moving a ticket to `FINALIZADO`
 - Automatically move to `EN REVISIÓN` when PR is created
+
+## Git Worktrees Workflow
+
+**Directory Structure:**
+The project uses git worktrees for parallel development:
+```
+~/code/projects/oxidate/
+├── oxidate-main/          # Main branch worktree
+│   ├── .git/              # Git directory (stays here)
+│   ├── src/
+│   ├── Cargo.toml
+│   ├── scripts/
+│   │   ├── new-ticket.sh      # Create new worktree
+│   │   └── remove-ticket.sh   # Remove worktree
+│   └── ...
+├── MFLP-9/                # Ticket worktree (sibling to oxidate-main)
+│   ├── .env               # Copied from oxidate-main
+│   ├── src/
+│   ├── target/            # Independent build directory
+│   └── ...
+└── MFLP-10/               # Another ticket worktree
+    └── ...
+```
+
+**Creating a New Ticket Worktree:**
+```bash
+# From the oxidate-main directory
+cd ~/code/projects/oxidate/oxidate-main
+./scripts/new-ticket.sh MFLP-9
+
+# This creates a new worktree at ../MFLP-9/
+# Navigate into it:
+cd ../MFLP-9
+```
+
+**Working with Worktrees:**
+- Each worktree is a separate working directory with its own branch
+- Changes in one worktree don't affect others
+- You can have multiple worktrees checked out simultaneously
+- All worktrees share the same .git repository (no duplication)
+- Each worktree has its own `target/` directory for independent builds
+- The `.env` file is automatically copied to new worktrees
+
+**Important Notes:**
+- Worktrees live outside oxidate-main (as siblings, not children)
+- Worktrees never get pushed to GitHub (only branches do)
+- Always work inside the worktree directory (e.g., `oxidate/MFLP-9/`)
+- Run cargo commands from within the worktree
+- Each worktree has its own `target/` directory
+
+**Removing a Worktree:**
+```bash
+# From the oxidate-main directory
+cd ~/code/projects/oxidate/oxidate-main
+./scripts/remove-ticket.sh MFLP-9
+
+# This will:
+# 1. Check for uncommitted changes
+# 2. Remove the worktree directory
+# 3. Optionally delete the branch (local and remote)
+```
+
+**Important:**
+- Never manually delete worktree directories - use the remove script
+- If you accidentally delete a worktree, run `git worktree prune` to clean up metadata
