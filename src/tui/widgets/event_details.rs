@@ -75,7 +75,6 @@ impl<'a> Widget for EventDetailsWidget<'a> {
         let event = &events[self.event_index];
         let mut lines = Vec::new();
 
-        // Calendar indicator (colored bar + calendar name)
         if let Some(ref calendar_id) = event.calendar_id {
             if let Some(cal) = self.state.get_calendar_by_id(calendar_id) {
                 let cal_color = cal
@@ -92,7 +91,6 @@ impl<'a> Widget for EventDetailsWidget<'a> {
             }
         }
 
-        // Title (Summary)
         let summary = event.summary.as_deref().unwrap_or("(No title)");
         lines.push(Line::from(Span::styled(
             summary,

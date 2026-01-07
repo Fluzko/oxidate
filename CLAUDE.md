@@ -101,6 +101,53 @@ Organize functionality around structs that represent entities (Tokens, OAuthClie
 
 **Benefits:** Changes isolated, easy to find code, modules reusable, easy to add new features
 
+### Code Comments
+
+**Philosophy: Code should be self-documenting. Comments are only for non-obvious information.**
+
+**ALWAYS Keep:**
+- **Doc comments (`///`)** on public functions/structs/modules - these are API documentation
+- **Complex logic explanations** - algorithms, performance optimizations, edge case handling
+- **Why, not what** - explain decisions, constraints, workarounds
+- **TODO/FIXME** with ticket references
+
+**NEVER Keep:**
+- Comments that repeat what the code already says
+- Obvious variable/function descriptions
+- Section headers for standard code patterns (e.g., `// Get data`, `// Render widget`)
+- Redundant explanations of self-explanatory code
+
+**Examples:**
+
+❌ **Bad - Obvious comments:**
+```rust
+// Get calendar color
+let bar_color = event.calendar_id
+    .and_then(|cal_id| self.state.get_calendar_color(cal_id));
+
+// Create the bar span
+let bar_span = Span::styled("▊▊ ", Style::default().fg(bar_color));
+```
+
+✅ **Good - Self-documenting code:**
+```rust
+let bar_color = event.calendar_id
+    .and_then(|cal_id| self.state.get_calendar_color(cal_id));
+
+let bar_span = Span::styled("▊▊ ", Style::default().fg(bar_color));
+```
+
+✅ **Good - Explains WHY:**
+```rust
+/// Get calendar background color by calendar_id
+/// Returns None if calendar not found or has no color
+pub fn get_calendar_color(&self, calendar_id: &str) -> Option<String> {
+    // ... implementation
+}
+```
+
+**Rule of Thumb:** If you can understand the code by reading it, don't add a comment. If you need to explain WHY something is done a certain way, add a comment.
+
 ### Error Handling with anyhow
 
 **Approach:**
