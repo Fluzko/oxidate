@@ -85,7 +85,7 @@ impl<'a> Widget for EventDetailsWidget<'a> {
                     .unwrap_or_else(default_event_color);
 
                 lines.push(Line::from(vec![
-                    Span::styled("▊ ", Style::default().fg(cal_color)),
+                    Span::styled("▊▊ ", Style::default().fg(cal_color)),
                     Span::styled(&cal.summary, Style::default().fg(Color::DarkGray)),
                 ]));
                 lines.push(Line::from(""));
