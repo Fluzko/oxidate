@@ -94,8 +94,8 @@ impl<'a> Widget for EventListWidget<'a> {
                 .and_then(|hex| parse_hex_color(&hex))
                 .unwrap_or_else(default_event_color);
 
-            // Colored vertical bar span
-            let bar_span = Span::styled("│ ", Style::default().fg(bar_color));
+            // Colored vertical bar span (wider for better visibility)
+            let bar_span = Span::styled("▊▊ ", Style::default().fg(bar_color));
 
             // Selection indicator and time
             let time_str = Self::format_event_time(event);
