@@ -107,6 +107,7 @@ mod tests {
             status: None,
             html_link: None,
             attendees: None,
+            calendar_id: None,
         };
 
         let date = extract_date_from_event(&event);
@@ -133,6 +134,7 @@ mod tests {
             status: None,
             html_link: None,
             attendees: None,
+            calendar_id: None,
         };
 
         let date = extract_date_from_event(&event);
@@ -159,6 +161,7 @@ mod tests {
             status: None,
             html_link: None,
             attendees: None,
+            calendar_id: None,
         };
 
         let date = extract_date_from_event(&event);

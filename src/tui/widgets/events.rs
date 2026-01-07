@@ -178,6 +178,7 @@ mod tests {
             status: None,
             html_link: None,
             attendees: None,
+            calendar_id: None,
         };
 
         let time_str = EventListWidget::format_event_time(&event);
@@ -206,6 +207,7 @@ mod tests {
             status: None,
             html_link: None,
             attendees: None,
+            calendar_id: None,
         };
 
         let time_str = EventListWidget::format_event_time(&event);
