@@ -324,7 +324,10 @@ mod tests {
         handle_key_event(create_key_event(KeyCode::Enter), &mut state);
         assert!(matches!(
             state.events_view_mode,
-            EventsViewMode::Details { event_index: 0 }
+            EventsViewMode::Details {
+                event_index: 0,
+                scroll_offset: 0
+            }
         ));
     }
 
@@ -332,7 +335,10 @@ mod tests {
     fn test_esc_closes_details() {
         let mut state = AppState::new();
         state.view_focus = ViewFocus::Events;
-        state.events_view_mode = EventsViewMode::Details { event_index: 0 };
+        state.events_view_mode = EventsViewMode::Details {
+            event_index: 0,
+            scroll_offset: 0,
+        };
 
         let action = handle_key_event(create_key_event(KeyCode::Esc), &mut state);
 
@@ -355,7 +361,10 @@ mod tests {
 
         // From Events Details
         state.view_focus = ViewFocus::Events;
-        state.events_view_mode = EventsViewMode::Details { event_index: 0 };
+        state.events_view_mode = EventsViewMode::Details {
+            event_index: 0,
+            scroll_offset: 0,
+        };
         handle_key_event(create_key_event(KeyCode::Tab), &mut state);
         assert_eq!(state.view_focus, ViewFocus::Calendar);
     }
@@ -420,7 +429,10 @@ mod tests {
         }];
         state.events.insert(date, events);
         state.selected_event_index = Some(0);
-        state.events_view_mode = EventsViewMode::Details { event_index: 0 };
+        state.events_view_mode = EventsViewMode::Details {
+            event_index: 0,
+            scroll_offset: 0,
+        };
 
         // Change date with arrow key
         handle_key_event(create_key_event(KeyCode::Right), &mut state);
