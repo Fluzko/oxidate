@@ -8,6 +8,7 @@ use ratatui::{
 };
 
 use crate::calendar::models::Event;
+use crate::tui::color_utils::{default_event_color, parse_hex_color};
 use crate::tui::state::{AppState, ViewFocus};
 
 pub struct EventListWidget<'a> {
@@ -85,6 +86,17 @@ impl<'a> Widget for EventListWidget<'a> {
             let is_selected = self.state.selected_event_index == Some(i)
                 && self.state.view_focus == ViewFocus::Events;
 
+            // Get calendar color
+            let bar_color = event
+                .calendar_id
+                .as_ref()
+                .and_then(|cal_id| self.state.get_calendar_color(cal_id))
+                .and_then(|hex| parse_hex_color(&hex))
+                .unwrap_or_else(default_event_color);
+
+            // Colored vertical bar span
+            let bar_span = Span::styled("│ ", Style::default().fg(bar_color));
+
             // Selection indicator and time
             let time_str = Self::format_event_time(event);
             let indicator = if is_selected { "> " } else { "  " };
@@ -114,7 +126,7 @@ impl<'a> Widget for EventListWidget<'a> {
                 },
             );
 
-            lines.push(Line::from(vec![time_span, summary_span]));
+            lines.push(Line::from(vec![bar_span.clone(), time_span, summary_span]));
 
             // Location (if available)
             if let Some(ref location) = event.location {
@@ -124,10 +136,12 @@ impl<'a> Widget for EventListWidget<'a> {
                     Style::default().fg(Color::Yellow)
                 };
 
-                lines.push(Line::from(Span::styled(
-                    format!("    \u{1f4cd} {}", location),
+                let location_span = Span::styled(
+                    format!("  \u{1f4cd} {}", location),
                     location_style,
-                )));
+                );
+
+                lines.push(Line::from(vec![bar_span, location_span]));
             }
 
             // Add spacing between events (except last one)
