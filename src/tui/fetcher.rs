@@ -28,8 +28,8 @@ pub async fn fetch_calendar_data(
     for calendar in &calendars {
         match client.list_events(&calendar.id, time_min, time_max).await {
             Ok(events) => {
-                // Group events by date
-                for event in events {
+                for mut event in events {
+                    event.calendar_id = Some(calendar.id.clone());
                     if let Some(date) = extract_date_from_event(&event) {
                         all_events_by_date.entry(date).or_default().push(event);
                     }
@@ -107,6 +107,7 @@ mod tests {
             status: None,
             html_link: None,
             attendees: None,
+            calendar_id: None,
         };
 
         let date = extract_date_from_event(&event);
@@ -133,6 +134,7 @@ mod tests {
             status: None,
             html_link: None,
             attendees: None,
+            calendar_id: None,
         };
 
         let date = extract_date_from_event(&event);
@@ -159,6 +161,7 @@ mod tests {
             status: None,
             html_link: None,
             attendees: None,
+            calendar_id: None,
         };
 
         let date = extract_date_from_event(&event);
