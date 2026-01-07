@@ -113,9 +113,9 @@ fn run_app(
                 }
                 EventsViewMode::Details {
                     event_index,
-                    scroll_offset: _,
+                    scroll_offset,
                 } => {
-                    let details_widget = EventDetailsWidget::new(app_state, event_index);
+                    let details_widget = EventDetailsWidget::new(app_state, event_index, scroll_offset);
                     f.render_widget(details_widget, chunks[1]);
                 }
             }
