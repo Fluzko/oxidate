@@ -334,7 +334,8 @@ mod tests {
             state.events_view_mode,
             EventsViewMode::Details {
                 event_index: 0,
-                scroll_offset: 0
+                scroll_offset: 0,
+                max_scroll: 0
             }
         ));
     }
@@ -346,6 +347,7 @@ mod tests {
         state.events_view_mode = EventsViewMode::Details {
             event_index: 0,
             scroll_offset: 0,
+            max_scroll: 0,
         };
 
         let action = handle_key_event(create_key_event(KeyCode::Esc), &mut state);
@@ -372,6 +374,7 @@ mod tests {
         state.events_view_mode = EventsViewMode::Details {
             event_index: 0,
             scroll_offset: 0,
+            max_scroll: 0,
         };
         handle_key_event(create_key_event(KeyCode::Tab), &mut state);
         assert_eq!(state.view_focus, ViewFocus::Calendar);
@@ -440,6 +443,7 @@ mod tests {
         state.events_view_mode = EventsViewMode::Details {
             event_index: 0,
             scroll_offset: 0,
+            max_scroll: 0,
         };
 
         // Change date with arrow key
@@ -468,6 +472,7 @@ mod tests {
         state.events_view_mode = EventsViewMode::Details {
             event_index: 0,
             scroll_offset: 5,
+            max_scroll: 10,
         };
 
         handle_key_event(create_key_event(KeyCode::Char('k')), &mut state);
@@ -476,7 +481,8 @@ mod tests {
             state.events_view_mode,
             EventsViewMode::Details {
                 event_index: 0,
-                scroll_offset: 4
+                scroll_offset: 4,
+                max_scroll: 10
             }
         ));
     }
@@ -488,6 +494,7 @@ mod tests {
         state.events_view_mode = EventsViewMode::Details {
             event_index: 0,
             scroll_offset: 3,
+            max_scroll: 10,
         };
 
         handle_key_event(create_key_event(KeyCode::Char('j')), &mut state);
@@ -496,7 +503,8 @@ mod tests {
             state.events_view_mode,
             EventsViewMode::Details {
                 event_index: 0,
-                scroll_offset: 4
+                scroll_offset: 4,
+                max_scroll: 10
             }
         ));
     }
@@ -525,6 +533,7 @@ mod tests {
         state.events_view_mode = EventsViewMode::Details {
             event_index: 0,
             scroll_offset: 10,
+            max_scroll: 10,
         };
 
         let action = handle_key_event(create_key_event(KeyCode::Esc), &mut state);
