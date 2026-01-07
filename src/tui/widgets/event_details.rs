@@ -8,6 +8,7 @@ use ratatui::{
 };
 
 use crate::calendar::models::Event;
+use crate::tui::color_utils::{default_event_color, parse_hex_color};
 use crate::tui::state::{AppState, ViewFocus};
 
 pub struct EventDetailsWidget<'a> {
@@ -73,6 +74,23 @@ impl<'a> Widget for EventDetailsWidget<'a> {
 
         let event = &events[self.event_index];
         let mut lines = Vec::new();
+
+        // Calendar indicator (colored bar + calendar name)
+        if let Some(ref calendar_id) = event.calendar_id {
+            if let Some(cal) = self.state.get_calendar_by_id(calendar_id) {
+                let cal_color = cal
+                    .background_color
+                    .as_ref()
+                    .and_then(|hex| parse_hex_color(hex))
+                    .unwrap_or_else(default_event_color);
+
+                lines.push(Line::from(vec![
+                    Span::styled("▊ ", Style::default().fg(cal_color)),
+                    Span::styled(&cal.summary, Style::default().fg(Color::DarkGray)),
+                ]));
+                lines.push(Line::from(""));
+            }
+        }
 
         // Title (Summary)
         let summary = event.summary.as_deref().unwrap_or("(No title)");
