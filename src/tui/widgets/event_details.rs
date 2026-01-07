@@ -208,8 +208,9 @@ impl<'a> Widget for EventDetailsWidget<'a> {
                 .begin_symbol(Some("↑"))
                 .end_symbol(Some("↓"));
 
-            let mut scrollbar_state =
-                ScrollbarState::new(content_height).position(scroll_offset);
+            let mut scrollbar_state = ScrollbarState::new(content_height)
+                .position(scroll_offset)
+                .viewport_content_length(visible_height);
 
             scrollbar.render(inner, buf, &mut scrollbar_state);
         }

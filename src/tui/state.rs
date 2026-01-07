@@ -143,9 +143,12 @@ impl AppState {
             scroll_offset,
         } = self.events_view_mode
         {
+            // Cap at a reasonable maximum to prevent unbounded scrolling
+            // Event details typically have < 50 lines even with many attendees
+            const MAX_SCROLL: usize = 50;
             self.events_view_mode = EventsViewMode::Details {
                 event_index,
-                scroll_offset: scroll_offset + 1,
+                scroll_offset: (scroll_offset + 1).min(MAX_SCROLL),
             };
         }
     }
