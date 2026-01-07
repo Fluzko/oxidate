@@ -12,7 +12,10 @@ pub enum ViewFocus {
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum EventsViewMode {
     List,
-    Details { event_index: usize },
+    Details {
+        event_index: usize,
+        scroll_offset: usize,
+    },
 }
 
 #[derive(Debug)]
@@ -123,12 +126,43 @@ impl AppState {
 
     pub fn select_event(&mut self) {
         if let Some(index) = self.selected_event_index {
-            self.events_view_mode = EventsViewMode::Details { event_index: index };
+            self.events_view_mode = EventsViewMode::Details {
+                event_index: index,
+                scroll_offset: 0,
+            };
         }
     }
 
     pub fn exit_event_details(&mut self) {
         self.events_view_mode = EventsViewMode::List;
+    }
+
+    pub fn scroll_event_details_down(&mut self) {
+        if let EventsViewMode::Details {
+            event_index,
+            scroll_offset,
+        } = self.events_view_mode
+        {
+            self.events_view_mode = EventsViewMode::Details {
+                event_index,
+                scroll_offset: scroll_offset + 1,
+            };
+        }
+    }
+
+    pub fn scroll_event_details_up(&mut self) {
+        if let EventsViewMode::Details {
+            event_index,
+            scroll_offset,
+        } = self.events_view_mode
+        {
+            if scroll_offset > 0 {
+                self.events_view_mode = EventsViewMode::Details {
+                    event_index,
+                    scroll_offset: scroll_offset - 1,
+                };
+            }
+        }
     }
 
     pub fn reset_event_selection(&mut self) {
@@ -625,7 +659,10 @@ mod tests {
 
         assert!(matches!(
             state.events_view_mode,
-            EventsViewMode::Details { event_index: 2 }
+            EventsViewMode::Details {
+                event_index: 2,
+                scroll_offset: 0
+            }
         ));
     }
 
@@ -643,7 +680,10 @@ mod tests {
     #[test]
     fn test_exit_event_details() {
         let mut state = AppState::new();
-        state.events_view_mode = EventsViewMode::Details { event_index: 1 };
+        state.events_view_mode = EventsViewMode::Details {
+            event_index: 1,
+            scroll_offset: 0,
+        };
 
         state.exit_event_details();
 
@@ -654,7 +694,10 @@ mod tests {
     fn test_reset_event_selection() {
         let mut state = AppState::new();
         state.selected_event_index = Some(3);
-        state.events_view_mode = EventsViewMode::Details { event_index: 3 };
+        state.events_view_mode = EventsViewMode::Details {
+            event_index: 3,
+            scroll_offset: 0,
+        };
 
         state.reset_event_selection();
 
@@ -858,5 +901,88 @@ mod tests {
         // Verify we have the event
         let events = state.events.get(&current_month_date).unwrap();
         assert_eq!(events[0].summary, Some("Current Month".to_string()));
+    }
+
+    #[test]
+    fn test_scroll_event_details_down_increments_offset() {
+        let mut state = AppState::new();
+        state.events_view_mode = EventsViewMode::Details {
+            event_index: 0,
+            scroll_offset: 0,
+        };
+
+        state.scroll_event_details_down();
+
+        assert!(matches!(
+            state.events_view_mode,
+            EventsViewMode::Details {
+                event_index: 0,
+                scroll_offset: 1
+            }
+        ));
+    }
+
+    #[test]
+    fn test_scroll_event_details_up_decrements_offset() {
+        let mut state = AppState::new();
+        state.events_view_mode = EventsViewMode::Details {
+            event_index: 0,
+            scroll_offset: 5,
+        };
+
+        state.scroll_event_details_up();
+
+        assert!(matches!(
+            state.events_view_mode,
+            EventsViewMode::Details {
+                event_index: 0,
+                scroll_offset: 4
+            }
+        ));
+    }
+
+    #[test]
+    fn test_scroll_event_details_up_stops_at_zero() {
+        let mut state = AppState::new();
+        state.events_view_mode = EventsViewMode::Details {
+            event_index: 0,
+            scroll_offset: 0,
+        };
+
+        state.scroll_event_details_up();
+
+        assert!(matches!(
+            state.events_view_mode,
+            EventsViewMode::Details {
+                event_index: 0,
+                scroll_offset: 0
+            }
+        ));
+    }
+
+    #[test]
+    fn test_scroll_only_works_in_details_mode() {
+        let mut state = AppState::new();
+        state.events_view_mode = EventsViewMode::List;
+
+        state.scroll_event_details_down();
+
+        assert!(matches!(state.events_view_mode, EventsViewMode::List));
+    }
+
+    #[test]
+    fn test_select_event_initializes_scroll_to_zero() {
+        let mut state = AppState::new();
+        state.selected_event_index = Some(2);
+
+        state.select_event();
+
+        assert!(matches!(
+            state.events_view_mode,
+            EventsViewMode::Details {
+                event_index: 2,
+                scroll_offset: 0
+            }
+        ));
     }
 }
