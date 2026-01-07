@@ -238,6 +238,21 @@ impl AppState {
             self.events.remove(&date);
         }
     }
+
+    /// Get calendar background color by calendar_id
+    /// Returns None if calendar not found or has no color
+    pub fn get_calendar_color(&self, calendar_id: &str) -> Option<String> {
+        self.calendars
+            .iter()
+            .find(|cal| cal.id == calendar_id)
+            .and_then(|cal| cal.background_color.clone())
+    }
+
+    /// Get calendar by ID
+    /// Returns None if calendar not found
+    pub fn get_calendar_by_id(&self, calendar_id: &str) -> Option<&Calendar> {
+        self.calendars.iter().find(|cal| cal.id == calendar_id)
+    }
 }
 
 #[derive(Debug, Clone)]
@@ -487,6 +502,7 @@ mod tests {
             status: None,
             html_link: None,
             attendees: None,
+            calendar_id: None,
         };
         state.events.insert(date, vec![event]);
         assert!(state.has_events(date));
@@ -555,6 +571,7 @@ mod tests {
                 status: None,
                 html_link: None,
                 attendees: None,
+            calendar_id: None,
             },
             Event {
                 id: "2".to_string(),
@@ -574,6 +591,7 @@ mod tests {
                 status: None,
                 html_link: None,
                 attendees: None,
+            calendar_id: None,
             },
         ];
         state.events.insert(date, events);
@@ -619,6 +637,7 @@ mod tests {
                 status: None,
                 html_link: None,
                 attendees: None,
+            calendar_id: None,
             },
             Event {
                 id: "2".to_string(),
@@ -638,6 +657,7 @@ mod tests {
                 status: None,
                 html_link: None,
                 attendees: None,
+            calendar_id: None,
             },
         ];
         state.events.insert(date, events);
@@ -843,6 +863,7 @@ mod tests {
                 status: None,
                 html_link: None,
                 attendees: None,
+            calendar_id: None,
             };
             state.events.insert(date, vec![event]);
         }
@@ -885,6 +906,7 @@ mod tests {
             status: None,
             html_link: None,
             attendees: None,
+            calendar_id: None,
         };
         state.events.insert(current_month_date, vec![event]);
 
@@ -915,6 +937,7 @@ mod tests {
                     status: None,
                     html_link: None,
                     attendees: None,
+            calendar_id: None,
                 };
                 state.events.insert(date, vec![event]);
             }
@@ -1018,5 +1041,80 @@ mod tests {
                 max_scroll: 0
             }
         ));
+    }
+
+    #[test]
+    fn test_get_calendar_color_found() {
+        use crate::calendar::models::Calendar;
+
+        let mut state = AppState::new();
+        let calendar = Calendar {
+            id: "cal123".to_string(),
+            summary: "Work Calendar".to_string(),
+            primary: false,
+            time_zone: "UTC".to_string(),
+            access_role: "owner".to_string(),
+            background_color: Some("#FF0000".to_string()),
+            description: None,
+        };
+        state.calendars.push(calendar);
+
+        let color = state.get_calendar_color("cal123");
+        assert_eq!(color, Some("#FF0000".to_string()));
+    }
+
+    #[test]
+    fn test_get_calendar_color_not_found() {
+        let state = AppState::new();
+        let color = state.get_calendar_color("nonexistent");
+        assert_eq!(color, None);
+    }
+
+    #[test]
+    fn test_get_calendar_color_no_color_defined() {
+        use crate::calendar::models::Calendar;
+
+        let mut state = AppState::new();
+        let calendar = Calendar {
+            id: "cal123".to_string(),
+            summary: "Work Calendar".to_string(),
+            primary: false,
+            time_zone: "UTC".to_string(),
+            access_role: "owner".to_string(),
+            background_color: None,
+            description: None,
+        };
+        state.calendars.push(calendar);
+
+        let color = state.get_calendar_color("cal123");
+        assert_eq!(color, None);
+    }
+
+    #[test]
+    fn test_get_calendar_by_id_found() {
+        use crate::calendar::models::Calendar;
+
+        let mut state = AppState::new();
+        let calendar = Calendar {
+            id: "cal123".to_string(),
+            summary: "Work Calendar".to_string(),
+            primary: false,
+            time_zone: "UTC".to_string(),
+            access_role: "owner".to_string(),
+            background_color: Some("#0088aa".to_string()),
+            description: None,
+        };
+        state.calendars.push(calendar);
+
+        let result = state.get_calendar_by_id("cal123");
+        assert!(result.is_some());
+        assert_eq!(result.unwrap().summary, "Work Calendar");
+    }
+
+    #[test]
+    fn test_get_calendar_by_id_not_found() {
+        let state = AppState::new();
+        let result = state.get_calendar_by_id("nonexistent");
+        assert!(result.is_none());
     }
 }
