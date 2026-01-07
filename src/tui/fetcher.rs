@@ -28,7 +28,6 @@ pub async fn fetch_calendar_data(
     for calendar in &calendars {
         match client.list_events(&calendar.id, time_min, time_max).await {
             Ok(events) => {
-                // Inject calendar_id AND group by date in single loop
                 for mut event in events {
                     event.calendar_id = Some(calendar.id.clone());
                     if let Some(date) = extract_date_from_event(&event) {

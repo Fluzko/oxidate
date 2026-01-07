@@ -86,7 +86,6 @@ impl<'a> Widget for EventListWidget<'a> {
             let is_selected = self.state.selected_event_index == Some(i)
                 && self.state.view_focus == ViewFocus::Events;
 
-            // Get calendar color
             let bar_color = event
                 .calendar_id
                 .as_ref()
@@ -94,10 +93,8 @@ impl<'a> Widget for EventListWidget<'a> {
                 .and_then(|hex| parse_hex_color(&hex))
                 .unwrap_or_else(default_event_color);
 
-            // Colored vertical bar span (wider for better visibility)
             let bar_span = Span::styled("▊▊ ", Style::default().fg(bar_color));
 
-            // Selection indicator and time
             let time_str = Self::format_event_time(event);
             let indicator = if is_selected { "> " } else { "  " };
 
@@ -115,7 +112,6 @@ impl<'a> Widget for EventListWidget<'a> {
                 },
             );
 
-            // Summary
             let summary = event.summary.as_deref().unwrap_or("(No title)");
             let summary_span = Span::styled(
                 format!(" {}", summary),
@@ -128,7 +124,6 @@ impl<'a> Widget for EventListWidget<'a> {
 
             lines.push(Line::from(vec![bar_span.clone(), time_span, summary_span]));
 
-            // Location (if available)
             if let Some(ref location) = event.location {
                 let location_style = if is_selected {
                     Style::default().fg(Color::Yellow).bg(Color::DarkGray)
