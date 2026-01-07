@@ -273,6 +273,7 @@ mod tests {
             status: None,
             html_link: None,
             attendees: None,
+            calendar_id: None,
         }];
         state.events.insert(date, events);
 
@@ -312,6 +313,7 @@ mod tests {
             status: None,
             html_link: None,
             attendees: None,
+            calendar_id: None,
         }];
         state.events.insert(date, events);
 
@@ -417,6 +419,7 @@ mod tests {
             status: None,
             html_link: None,
             attendees: None,
+            calendar_id: None,
         }];
         state.events.insert(date, events);
         state.selected_event_index = Some(0);

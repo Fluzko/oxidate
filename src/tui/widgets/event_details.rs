@@ -225,6 +225,7 @@ mod tests {
                     optional: Some(true),
                 },
             ]),
+            calendar_id: None,
         };
 
         state.events.insert(date, vec![event]);
@@ -260,6 +261,7 @@ mod tests {
             status: None,
             html_link: None,
             attendees: None,
+            calendar_id: None,
         };
 
         state.events.insert(date, vec![event]);

@@ -429,6 +429,7 @@ mod tests {
             status: None,
             html_link: None,
             attendees: None,
+            calendar_id: None,
         };
         state.events.insert(date, vec![event]);
         assert!(state.has_events(date));
@@ -497,6 +498,7 @@ mod tests {
                 status: None,
                 html_link: None,
                 attendees: None,
+            calendar_id: None,
             },
             Event {
                 id: "2".to_string(),
@@ -516,6 +518,7 @@ mod tests {
                 status: None,
                 html_link: None,
                 attendees: None,
+            calendar_id: None,
             },
         ];
         state.events.insert(date, events);
@@ -561,6 +564,7 @@ mod tests {
                 status: None,
                 html_link: None,
                 attendees: None,
+            calendar_id: None,
             },
             Event {
                 id: "2".to_string(),
@@ -580,6 +584,7 @@ mod tests {
                 status: None,
                 html_link: None,
                 attendees: None,
+            calendar_id: None,
             },
         ];
         state.events.insert(date, events);
@@ -773,6 +778,7 @@ mod tests {
                 status: None,
                 html_link: None,
                 attendees: None,
+            calendar_id: None,
             };
             state.events.insert(date, vec![event]);
         }
@@ -815,6 +821,7 @@ mod tests {
             status: None,
             html_link: None,
             attendees: None,
+            calendar_id: None,
         };
         state.events.insert(current_month_date, vec![event]);
 
@@ -845,6 +852,7 @@ mod tests {
                     status: None,
                     html_link: None,
                     attendees: None,
+            calendar_id: None,
                 };
                 state.events.insert(date, vec![event]);
             }
