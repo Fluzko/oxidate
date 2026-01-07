@@ -27,6 +27,8 @@ pub struct Event {
     #[serde(rename = "htmlLink")]
     pub html_link: Option<String>,
     pub attendees: Option<Vec<Attendee>>,
+    #[serde(skip)]
+    pub calendar_id: Option<String>,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
@@ -200,6 +202,7 @@ mod tests {
         assert_eq!(event.status, None);
         assert_eq!(event.html_link, None);
         assert_eq!(event.attendees, None);
+        assert_eq!(event.calendar_id, None);
     }
 
     #[test]
@@ -253,6 +256,7 @@ mod tests {
         assert_eq!(attendees[0].response_status, Some("accepted".to_string()));
         assert_eq!(attendees[1].email, "bob@example.com");
         assert_eq!(attendees[1].optional, Some(true));
+        assert_eq!(event.calendar_id, None);
     }
 
     #[test]
@@ -354,5 +358,53 @@ mod tests {
             response.next_page_token,
             Some("next_page_token_xyz".to_string())
         );
+    }
+
+    #[test]
+    fn test_event_deserialize_without_calendar_id() {
+        // Verify events deserialize from API without calendar_id field
+        let json = r#"{
+            "id": "event123",
+            "summary": "Test Event",
+            "start": {
+                "dateTime": "2025-11-28T10:00:00-05:00"
+            },
+            "end": {
+                "dateTime": "2025-11-28T11:00:00-05:00"
+            }
+        }"#;
+
+        let event: Event = serde_json::from_str(json).expect("Failed to deserialize");
+
+        assert_eq!(event.id, "event123");
+        assert_eq!(event.summary, Some("Test Event".to_string()));
+        // calendar_id should be None since it's not in the API response
+        assert_eq!(event.calendar_id, None);
+    }
+
+    #[test]
+    fn test_event_with_calendar_id_assignment() {
+        // Verify we can assign calendar_id after deserialization
+        let json = r#"{
+            "id": "event456",
+            "summary": "Another Event",
+            "start": {
+                "dateTime": "2025-11-28T14:00:00-05:00"
+            },
+            "end": {
+                "dateTime": "2025-11-28T15:00:00-05:00"
+            }
+        }"#;
+
+        let mut event: Event = serde_json::from_str(json).expect("Failed to deserialize");
+
+        // Initially None
+        assert_eq!(event.calendar_id, None);
+
+        // Assign calendar_id
+        event.calendar_id = Some("cal123".to_string());
+
+        // Verify assignment worked
+        assert_eq!(event.calendar_id, Some("cal123".to_string()));
     }
 }
