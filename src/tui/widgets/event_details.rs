@@ -14,13 +14,13 @@ use crate::calendar::models::Event;
 use crate::tui::state::{AppState, ViewFocus};
 
 pub struct EventDetailsWidget<'a> {
-    state: &'a AppState,
+    state: &'a mut AppState,
     event_index: usize,
     scroll_offset: usize,
 }
 
 impl<'a> EventDetailsWidget<'a> {
-    pub fn new(state: &'a AppState, event_index: usize, scroll_offset: usize) -> Self {
+    pub fn new(state: &'a mut AppState, event_index: usize, scroll_offset: usize) -> Self {
         Self {
             state,
             event_index,
@@ -188,32 +188,30 @@ impl<'a> Widget for EventDetailsWidget<'a> {
                 .add_modifier(Modifier::ITALIC),
         )));
 
-        // Calculate scrolling parameters
         let content_height = lines.len();
         let visible_height = inner.height as usize;
         let max_scroll = Self::calculate_max_scroll(content_height, visible_height);
 
-        // Clamp scroll offset to valid range
         let scroll_offset = self.scroll_offset.min(max_scroll);
 
-        // Render paragraph with scroll offset applied
         let paragraph = Paragraph::new(lines)
             .wrap(Wrap { trim: true })
             .scroll((scroll_offset as u16, 0));
         paragraph.render(inner, buf);
 
-        // Render scrollbar if content exceeds visible area
         if content_height > visible_height {
             let scrollbar = Scrollbar::new(ScrollbarOrientation::VerticalRight)
                 .begin_symbol(Some("↑"))
                 .end_symbol(Some("↓"));
 
-            let mut scrollbar_state = ScrollbarState::new(content_height)
-                .position(scroll_offset)
-                .viewport_content_length(visible_height);
+            let mut scrollbar_state = ScrollbarState::new(max_scroll)
+                .position(scroll_offset);
 
             scrollbar.render(inner, buf, &mut scrollbar_state);
         }
+
+        self.state.update_event_details_max_scroll(max_scroll);
+
     }
 }
 
@@ -225,8 +223,8 @@ mod tests {
 
     #[test]
     fn test_event_details_widget_new() {
-        let state = AppState::new();
-        let widget = EventDetailsWidget::new(&state, 0, 0);
+        let mut state = AppState::new();
+        let widget = EventDetailsWidget::new(&mut state, 0, 0);
         assert_eq!(widget.event_index, 0);
     }
 
@@ -271,7 +269,7 @@ mod tests {
 
         state.events.insert(date, vec![event]);
 
-        let widget = EventDetailsWidget::new(&state, 0, 0);
+        let widget = EventDetailsWidget::new(&mut state, 0, 0);
 
         // Widget should have access to all fields
         assert_eq!(widget.state.selected_date, date);
@@ -306,7 +304,7 @@ mod tests {
 
         state.events.insert(date, vec![event]);
 
-        let widget = EventDetailsWidget::new(&state, 0, 0);
+        let widget = EventDetailsWidget::new(&mut state, 0, 0);
 
         // Should handle minimal fields without crashing
         assert_eq!(widget.event_index, 0);
@@ -314,10 +312,10 @@ mod tests {
 
     #[test]
     fn test_handles_invalid_index() {
-        let state = AppState::new();
+        let mut state = AppState::new();
 
         // Create widget with out-of-bounds index
-        let widget = EventDetailsWidget::new(&state, 99, 0);
+        let widget = EventDetailsWidget::new(&mut state, 99, 0);
 
         // Should not panic, just have invalid index
         assert_eq!(widget.event_index, 99);
@@ -343,15 +341,15 @@ mod tests {
 
     #[test]
     fn test_widget_accepts_scroll_offset() {
-        let state = AppState::new();
-        let widget = EventDetailsWidget::new(&state, 0, 5);
+        let mut state = AppState::new();
+        let widget = EventDetailsWidget::new(&mut state, 0, 5);
         assert_eq!(widget.scroll_offset, 5);
     }
 
     #[test]
     fn test_widget_new_with_zero_scroll() {
-        let state = AppState::new();
-        let widget = EventDetailsWidget::new(&state, 0, 0);
+        let mut state = AppState::new();
+        let widget = EventDetailsWidget::new(&mut state, 0, 0);
         assert_eq!(widget.scroll_offset, 0);
     }
 }

@@ -15,6 +15,7 @@ pub enum EventsViewMode {
     Details {
         event_index: usize,
         scroll_offset: usize,
+        max_scroll: usize,
     },
 }
 
@@ -129,6 +130,7 @@ impl AppState {
             self.events_view_mode = EventsViewMode::Details {
                 event_index: index,
                 scroll_offset: 0,
+                max_scroll: 0,
             };
         }
     }
@@ -141,15 +143,16 @@ impl AppState {
         if let EventsViewMode::Details {
             event_index,
             scroll_offset,
+            max_scroll,
         } = self.events_view_mode
         {
-            // Cap at a reasonable maximum to prevent unbounded scrolling
-            // Event details typically have < 50 lines even with many attendees
-            const MAX_SCROLL: usize = 50;
-            self.events_view_mode = EventsViewMode::Details {
-                event_index,
-                scroll_offset: (scroll_offset + 1).min(MAX_SCROLL),
-            };
+            if scroll_offset < max_scroll {
+                self.events_view_mode = EventsViewMode::Details {
+                    event_index,
+                    scroll_offset: scroll_offset + 1,
+                    max_scroll,
+                };
+            }
         }
     }
 
@@ -157,14 +160,32 @@ impl AppState {
         if let EventsViewMode::Details {
             event_index,
             scroll_offset,
+            max_scroll,
         } = self.events_view_mode
         {
             if scroll_offset > 0 {
                 self.events_view_mode = EventsViewMode::Details {
                     event_index,
                     scroll_offset: scroll_offset - 1,
+                    max_scroll,
                 };
             }
+        }
+    }
+
+    pub fn update_event_details_max_scroll(&mut self, new_max_scroll: usize) {
+        if let EventsViewMode::Details {
+            event_index,
+            scroll_offset,
+            ..
+        } = self.events_view_mode
+        {
+            let clamped_offset = scroll_offset.min(new_max_scroll);
+            self.events_view_mode = EventsViewMode::Details {
+                event_index,
+                scroll_offset: clamped_offset,
+                max_scroll: new_max_scroll,
+            };
         }
     }
 
@@ -664,7 +685,8 @@ mod tests {
             state.events_view_mode,
             EventsViewMode::Details {
                 event_index: 2,
-                scroll_offset: 0
+                scroll_offset: 0,
+                max_scroll: 0
             }
         ));
     }
@@ -686,6 +708,7 @@ mod tests {
         state.events_view_mode = EventsViewMode::Details {
             event_index: 1,
             scroll_offset: 0,
+            max_scroll: 0,
         };
 
         state.exit_event_details();
@@ -700,6 +723,7 @@ mod tests {
         state.events_view_mode = EventsViewMode::Details {
             event_index: 3,
             scroll_offset: 0,
+            max_scroll: 0,
         };
 
         state.reset_event_selection();
@@ -912,6 +936,7 @@ mod tests {
         state.events_view_mode = EventsViewMode::Details {
             event_index: 0,
             scroll_offset: 0,
+            max_scroll: 10,
         };
 
         state.scroll_event_details_down();
@@ -920,7 +945,8 @@ mod tests {
             state.events_view_mode,
             EventsViewMode::Details {
                 event_index: 0,
-                scroll_offset: 1
+                scroll_offset: 1,
+                max_scroll: 10
             }
         ));
     }
@@ -931,6 +957,7 @@ mod tests {
         state.events_view_mode = EventsViewMode::Details {
             event_index: 0,
             scroll_offset: 5,
+            max_scroll: 10,
         };
 
         state.scroll_event_details_up();
@@ -939,7 +966,8 @@ mod tests {
             state.events_view_mode,
             EventsViewMode::Details {
                 event_index: 0,
-                scroll_offset: 4
+                scroll_offset: 4,
+                max_scroll: 10
             }
         ));
     }
@@ -950,6 +978,7 @@ mod tests {
         state.events_view_mode = EventsViewMode::Details {
             event_index: 0,
             scroll_offset: 0,
+            max_scroll: 10,
         };
 
         state.scroll_event_details_up();
@@ -958,7 +987,8 @@ mod tests {
             state.events_view_mode,
             EventsViewMode::Details {
                 event_index: 0,
-                scroll_offset: 0
+                scroll_offset: 0,
+                max_scroll: _
             }
         ));
     }
@@ -984,7 +1014,8 @@ mod tests {
             state.events_view_mode,
             EventsViewMode::Details {
                 event_index: 2,
-                scroll_offset: 0
+                scroll_offset: 0,
+                max_scroll: 0
             }
         ));
     }
