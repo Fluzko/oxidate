@@ -90,6 +90,14 @@ fn handle_events_details_input(key: KeyEvent, state: &mut AppState) -> InputActi
             state.exit_event_details();
             InputAction::None
         }
+        KeyCode::Char('k') => {
+            state.scroll_event_details_up();
+            InputAction::None
+        }
+        KeyCode::Char('j') => {
+            state.scroll_event_details_down();
+            InputAction::None
+        }
         _ => InputAction::None,
     }
 }
@@ -326,7 +334,11 @@ mod tests {
         handle_key_event(create_key_event(KeyCode::Enter), &mut state);
         assert!(matches!(
             state.events_view_mode,
-            EventsViewMode::Details { event_index: 0 }
+            EventsViewMode::Details {
+                event_index: 0,
+                scroll_offset: 0,
+                max_scroll: 0
+            }
         ));
     }
 
@@ -334,7 +346,11 @@ mod tests {
     fn test_esc_closes_details() {
         let mut state = AppState::new();
         state.view_focus = ViewFocus::Events;
-        state.events_view_mode = EventsViewMode::Details { event_index: 0 };
+        state.events_view_mode = EventsViewMode::Details {
+            event_index: 0,
+            scroll_offset: 0,
+            max_scroll: 0,
+        };
 
         let action = handle_key_event(create_key_event(KeyCode::Esc), &mut state);
 
@@ -357,7 +373,11 @@ mod tests {
 
         // From Events Details
         state.view_focus = ViewFocus::Events;
-        state.events_view_mode = EventsViewMode::Details { event_index: 0 };
+        state.events_view_mode = EventsViewMode::Details {
+            event_index: 0,
+            scroll_offset: 0,
+            max_scroll: 0,
+        };
         handle_key_event(create_key_event(KeyCode::Tab), &mut state);
         assert_eq!(state.view_focus, ViewFocus::Calendar);
     }
@@ -423,7 +443,11 @@ mod tests {
         }];
         state.events.insert(date, events);
         state.selected_event_index = Some(0);
-        state.events_view_mode = EventsViewMode::Details { event_index: 0 };
+        state.events_view_mode = EventsViewMode::Details {
+            event_index: 0,
+            scroll_offset: 0,
+            max_scroll: 0,
+        };
 
         // Change date with arrow key
         handle_key_event(create_key_event(KeyCode::Right), &mut state);
@@ -442,5 +466,82 @@ mod tests {
         let action = handle_key_event(create_key_event(KeyCode::Esc), &mut state);
 
         assert!(matches!(action, InputAction::Quit));
+    }
+
+    #[test]
+    fn test_k_scrolls_details_up() {
+        let mut state = AppState::new();
+        state.view_focus = ViewFocus::Events;
+        state.events_view_mode = EventsViewMode::Details {
+            event_index: 0,
+            scroll_offset: 5,
+            max_scroll: 10,
+        };
+
+        handle_key_event(create_key_event(KeyCode::Char('k')), &mut state);
+
+        assert!(matches!(
+            state.events_view_mode,
+            EventsViewMode::Details {
+                event_index: 0,
+                scroll_offset: 4,
+                max_scroll: 10
+            }
+        ));
+    }
+
+    #[test]
+    fn test_j_scrolls_details_down() {
+        let mut state = AppState::new();
+        state.view_focus = ViewFocus::Events;
+        state.events_view_mode = EventsViewMode::Details {
+            event_index: 0,
+            scroll_offset: 3,
+            max_scroll: 10,
+        };
+
+        handle_key_event(create_key_event(KeyCode::Char('j')), &mut state);
+
+        assert!(matches!(
+            state.events_view_mode,
+            EventsViewMode::Details {
+                event_index: 0,
+                scroll_offset: 4,
+                max_scroll: 10
+            }
+        ));
+    }
+
+    #[test]
+    fn test_scroll_keys_only_work_in_details_mode() {
+        let mut state = AppState::new();
+        state.view_focus = ViewFocus::Events;
+        state.events_view_mode = EventsViewMode::List;
+
+        handle_key_event(create_key_event(KeyCode::Char('j')), &mut state);
+
+        // Should still be in List mode
+        assert!(matches!(state.events_view_mode, EventsViewMode::List));
+
+        handle_key_event(create_key_event(KeyCode::Char('k')), &mut state);
+
+        // Should still be in List mode
+        assert!(matches!(state.events_view_mode, EventsViewMode::List));
+    }
+
+    #[test]
+    fn test_esc_still_closes_details_with_scrolling() {
+        let mut state = AppState::new();
+        state.view_focus = ViewFocus::Events;
+        state.events_view_mode = EventsViewMode::Details {
+            event_index: 0,
+            scroll_offset: 10,
+            max_scroll: 10,
+        };
+
+        let action = handle_key_event(create_key_event(KeyCode::Esc), &mut state);
+
+        assert!(matches!(action, InputAction::None));
+        assert!(matches!(state.events_view_mode, EventsViewMode::List));
     }
 }

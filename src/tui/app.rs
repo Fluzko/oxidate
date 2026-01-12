@@ -111,8 +111,12 @@ fn run_app(
                     let events_widget = EventListWidget::new(app_state);
                     f.render_widget(events_widget, chunks[1]);
                 }
-                EventsViewMode::Details { event_index } => {
-                    let details_widget = EventDetailsWidget::new(app_state, event_index);
+                EventsViewMode::Details {
+                    event_index,
+                    scroll_offset,
+                    ..
+                } => {
+                    let details_widget = EventDetailsWidget::new(&mut *app_state, event_index, scroll_offset);
                     f.render_widget(details_widget, chunks[1]);
                 }
             }

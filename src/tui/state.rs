@@ -12,7 +12,11 @@ pub enum ViewFocus {
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum EventsViewMode {
     List,
-    Details { event_index: usize },
+    Details {
+        event_index: usize,
+        scroll_offset: usize,
+        max_scroll: usize,
+    },
 }
 
 #[derive(Debug)]
@@ -123,12 +127,66 @@ impl AppState {
 
     pub fn select_event(&mut self) {
         if let Some(index) = self.selected_event_index {
-            self.events_view_mode = EventsViewMode::Details { event_index: index };
+            self.events_view_mode = EventsViewMode::Details {
+                event_index: index,
+                scroll_offset: 0,
+                max_scroll: 0,
+            };
         }
     }
 
     pub fn exit_event_details(&mut self) {
         self.events_view_mode = EventsViewMode::List;
+    }
+
+    pub fn scroll_event_details_down(&mut self) {
+        if let EventsViewMode::Details {
+            event_index,
+            scroll_offset,
+            max_scroll,
+        } = self.events_view_mode
+        {
+            if scroll_offset < max_scroll {
+                self.events_view_mode = EventsViewMode::Details {
+                    event_index,
+                    scroll_offset: scroll_offset + 1,
+                    max_scroll,
+                };
+            }
+        }
+    }
+
+    pub fn scroll_event_details_up(&mut self) {
+        if let EventsViewMode::Details {
+            event_index,
+            scroll_offset,
+            max_scroll,
+        } = self.events_view_mode
+        {
+            if scroll_offset > 0 {
+                self.events_view_mode = EventsViewMode::Details {
+                    event_index,
+                    scroll_offset: scroll_offset - 1,
+                    max_scroll,
+                };
+            }
+        }
+    }
+
+    pub fn update_event_details_max_scroll(&mut self, new_max_scroll: usize) {
+        if let EventsViewMode::Details {
+            event_index,
+            scroll_offset,
+            ..
+        } = self.events_view_mode
+        {
+            let clamped_offset = scroll_offset.min(new_max_scroll);
+            self.events_view_mode = EventsViewMode::Details {
+                event_index,
+                scroll_offset: clamped_offset,
+                max_scroll: new_max_scroll,
+            };
+        }
     }
 
     pub fn reset_event_selection(&mut self) {
@@ -645,7 +703,11 @@ mod tests {
 
         assert!(matches!(
             state.events_view_mode,
-            EventsViewMode::Details { event_index: 2 }
+            EventsViewMode::Details {
+                event_index: 2,
+                scroll_offset: 0,
+                max_scroll: 0
+            }
         ));
     }
 
@@ -663,7 +725,11 @@ mod tests {
     #[test]
     fn test_exit_event_details() {
         let mut state = AppState::new();
-        state.events_view_mode = EventsViewMode::Details { event_index: 1 };
+        state.events_view_mode = EventsViewMode::Details {
+            event_index: 1,
+            scroll_offset: 0,
+            max_scroll: 0,
+        };
 
         state.exit_event_details();
 
@@ -674,7 +740,11 @@ mod tests {
     fn test_reset_event_selection() {
         let mut state = AppState::new();
         state.selected_event_index = Some(3);
-        state.events_view_mode = EventsViewMode::Details { event_index: 3 };
+        state.events_view_mode = EventsViewMode::Details {
+            event_index: 3,
+            scroll_offset: 0,
+            max_scroll: 0,
+        };
 
         state.reset_event_selection();
 
@@ -884,6 +954,96 @@ mod tests {
     }
 
     #[test]
+    fn test_scroll_event_details_down_increments_offset() {
+        let mut state = AppState::new();
+        state.events_view_mode = EventsViewMode::Details {
+            event_index: 0,
+            scroll_offset: 0,
+            max_scroll: 10,
+        };
+
+        state.scroll_event_details_down();
+
+        assert!(matches!(
+            state.events_view_mode,
+            EventsViewMode::Details {
+                event_index: 0,
+                scroll_offset: 1,
+                max_scroll: 10
+            }
+        ));
+    }
+
+    #[test]
+    fn test_scroll_event_details_up_decrements_offset() {
+        let mut state = AppState::new();
+        state.events_view_mode = EventsViewMode::Details {
+            event_index: 0,
+            scroll_offset: 5,
+            max_scroll: 10,
+        };
+
+        state.scroll_event_details_up();
+
+        assert!(matches!(
+            state.events_view_mode,
+            EventsViewMode::Details {
+                event_index: 0,
+                scroll_offset: 4,
+                max_scroll: 10
+            }
+        ));
+    }
+
+    #[test]
+    fn test_scroll_event_details_up_stops_at_zero() {
+        let mut state = AppState::new();
+        state.events_view_mode = EventsViewMode::Details {
+            event_index: 0,
+            scroll_offset: 0,
+            max_scroll: 10,
+        };
+
+        state.scroll_event_details_up();
+
+        assert!(matches!(
+            state.events_view_mode,
+            EventsViewMode::Details {
+                event_index: 0,
+                scroll_offset: 0,
+                max_scroll: _
+            }
+        ));
+    }
+
+    #[test]
+    fn test_scroll_only_works_in_details_mode() {
+        let mut state = AppState::new();
+        state.events_view_mode = EventsViewMode::List;
+
+        state.scroll_event_details_down();
+
+        assert!(matches!(state.events_view_mode, EventsViewMode::List));
+    }
+
+    #[test]
+    fn test_select_event_initializes_scroll_to_zero() {
+        let mut state = AppState::new();
+        state.selected_event_index = Some(2);
+
+        state.select_event();
+
+        assert!(matches!(
+            state.events_view_mode,
+            EventsViewMode::Details {
+                event_index: 2,
+                scroll_offset: 0,
+                max_scroll: 0
+            }
+        ));
+    }
+
+    #[test]
     fn test_get_calendar_color_found() {
         use crate::calendar::models::Calendar;
 
@@ -921,7 +1081,7 @@ mod tests {
             primary: false,
             time_zone: "UTC".to_string(),
             access_role: "owner".to_string(),
-            background_color: None, // No color defined
+            background_color: None,
             description: None,
         };
         state.calendars.push(calendar);
